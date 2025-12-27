@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compound Quest: Expert Edition</title>
+    <title>Compound Quest: CSV Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
@@ -25,6 +25,7 @@
             padding: 8px; 
             font-weight: bold;
             border-radius: 1rem;
+            text-transform: uppercase;
         }
         .selected { 
             background-color: #4f46e5 !important; 
@@ -62,7 +63,7 @@
     <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl">
         <div class="text-center">
             <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Level</span>
-            <span id="level-display" class="text-xl font-black text-indigo-400">1/20</span>
+            <span id="level-display" class="text-xl font-black text-indigo-400">1/-</span>
         </div>
         <div class="text-center">
             <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Score</span>
@@ -77,7 +78,7 @@
     </div>
 
     <div class="w-full max-w-md flex gap-2 mb-4">
-        <button onclick="showLevelStory()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-bold transition-colors">📖 Level Story</button>
+        <div class="flex-1 py-3 bg-slate-700/50 rounded-xl text-center text-xs font-bold text-slate-400 italic">Match the Parts!</div>
         <button onclick="showEndGameSummary()" class="px-4 py-3 bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 rounded-xl text-sm font-bold text-red-200 transition-colors">🏁 Finish</button>
     </div>
 
@@ -91,16 +92,6 @@
     <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-2xl opacity-0 transition-all duration-200 text-center shadow-lg">
         <p id="word-title" class="text-indigo-300 font-bold uppercase text-sm mb-1 tracking-widest"></p>
         <p id="word-meaning" class="text-slate-200 text-sm italic mb-2"></p>
-        <p id="word-example" class="text-xs text-indigo-200 border-t border-indigo-500/20 pt-2"></p>
-    </div>
-
-    <!-- Story Modal -->
-    <div id="story-modal" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-[60] p-6">
-        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full border border-slate-700 shadow-2xl">
-            <h3 class="text-indigo-400 font-black text-xl mb-4">Master Level Story</h3>
-            <p id="story-content" class="text-slate-300 italic leading-relaxed"></p>
-            <button onclick="closeStoryModal()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-bold transition-colors">Got it!</button>
-        </div>
     </div>
 
     <!-- Level Complete Overlay -->
@@ -122,9 +113,7 @@
             
             <div class="overflow-y-auto pr-2 mb-4">
                 <h3 class="text-indigo-400 font-bold mb-2 uppercase text-xs tracking-widest">Words to Practice:</h3>
-                <div id="wrong-words-list" class="space-y-2">
-                    <!-- List of wrong words -->
-                </div>
+                <div id="wrong-words-list" class="space-y-2"></div>
             </div>
 
             <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg">Play Again! 🔄</button>
@@ -132,132 +121,491 @@
     </div>
 
     <script>
-        const levelStories = {
-            1: "The lighthouse keeper stood on his skateboard in the background, checking if his jacket was waterproof while the weatherman talked.",
-            2: "During the earthquake and thunderstorm, the scarecrow fell over the wheelchair in the field where the grasshopper lived.",
-            3: "The firefly lit up the backyard as the moonlight hit the sunflower, while a dragonfly zoomed over the birdhouse.",
-            4: "I saw a rainbow near the waterfall, then used a magnifying glass to look at the ladybug on the sidewalk by the spaceship.",
-            5: "The snowball hit the snowman in the playground where children used a jump-rope near the sandbox and seesaw.",
-            6: "After breakfast, the mailman checked the mailbox and saw a postcard from someone at the airport or shipyard.",
-            7: "He put on his raincoat and used a flashlight to find his backpack after the shipwreck near the coastline.",
-            8: "The butterfly landed on the windowsill while the woodcutter wore his earmuffs to chop wood for the fireplace.",
-            9: "In the bedroom, the moonlight hit the bookshelf and the lampshade, while he looked at a notebook near the cupboard.",
-            10: "The basketball player ate a strawberry and a cupcake before heading to the ballpark for the championship.",
-            11: "A jellyfish swam past the starfish and seaweed while the submarine moved through the saltwater.",
-            12: "The cowboy saw a rattlesnake near the campfire, then rode through the desert under the starlight.",
-            13: "He used a screwdriver and a hammer to fix the keyboard and the touchpad on his broken computer.",
-            14: "The grandmother wore her goldring while baking gingerbread and cheesecake for the weekend party.",
-            15: "I found a seashell near the sandcastle on the seashore, then put on my sunglasses to watch the sunrise.",
-            16: "The quarterback saw the scoreboard change as the touchdown happened during the big football game.",
-            17: "The toothfairy left a coin under the pillow after he used his toothbrush and toothpaste before bedtime.",
-            18: "The superhero saved the city from a landslide and a whirlwind, using his super strength in the moonlight.",
-            19: "The popcorn was salty, so he had a milkshake and a peppermint while watching a movie about a space station.",
-            20: "The honeybee flew to the honeycomb while the dragonfly danced above the waterlily in the middle of the afternoon."
+        /** * DATA MANAGEMENT
+         * Updated to full 208 words from CSV.
+         */
+        
+        const rawCSVData = `DO,NATION
+SLIT,HER
+CAR,GO
+COMB,AT
+FOR,MAT
+FOR,BID
+RAM,PAGE
+HIGH,BALL
+HAND,SOME
+AN,OTHER
+POWER,LESS
+CENT,RALLY
+CAN,ON
+AIR,LINE
+CAR,PET
+TAR,GET
+FOR,TUNE
+PART,RIDGE
+CART,RIDGE
+KNOW,LEDGE
+OUT,LET
+ACT,OR
+FORE,CAST
+OR,DEAL
+TRIP,LET
+FACT,OR
+TURN,COAT
+WATER,FALL
+SO,LID
+SEED,LING
+EAR,WIG
+AS,CENT
+PAGE,ANT
+STIR,RING
+AT,TACK
+IN,SCRIBE
+BUTTER,CUP
+SAT,URN
+PASS,AGE
+JUST,ICE
+UP,HOLD
+AM,BUSH
+WAG,ON
+OUT,PUT
+BAND,IT
+TO,WING
+DEAD,LOCK
+RAN,SACK
+PORT,ABLE
+NO,VICE
+FEAT,HER
+HEAT,HER
+HUM,AN
+COT,TON
+SNAP,PING
+BAR,GAIN
+FUR,ROW
+CAB,IN
+PUFF,IN
+RAIL,WAY
+BAR,ROW
+DAM,AGE
+A,VOID
+A,WAY
+TRAP,DOOR
+WEEK,END
+NOT,ICE
+CART,ON
+BE,AT
+ME,AN
+BE,HIND
+TAB,LET
+BAT,ON
+BUT,TON
+MAN,AGE
+CAR,CASE
+CAP,ABLE
+QUEST,ION
+BIRTH,DAY
+FOR,GET
+CAR,ROT
+IN,CREASE
+MAY,OR
+PULL,OVER
+OR,BIT
+PRIM,ROSE
+NAP,KIN
+AS,KING
+FORT,NIGHT
+BIT,TEN
+FRIEND,SHIP
+REST,LESS
+HER,ON
+BAND,AGE
+FOR,WARD
+IS,LAND
+ROT,TEN
+OVER,WEIGHT
+POST,AGE
+ADAPT,ABLE
+KEY,BOARD
+CARE,TAKER
+CUP,BOARD
+EYE,BALL
+REST,RAIN
+MAN,HOLE
+OVER,ACT
+SIDE,BOARD
+COPY,RIGHT
+NO,BODY
+NOW,HERE
+RUN,AWAY
+OFF,SPRING
+OUT,LAW
+UNDER,GROWTH
+SOME,ONE
+WHAT,EVER
+UNDER,TAKE
+OVER,COAT
+SUN,BURN
+UP,ON
+OUT,BURST
+VIEW,POINT
+STY,LED
+EVER,GREEN
+DATA,BASE
+DOWN,LOAD
+BROAD,BAND
+OVER,DUE
+PASS,PORT
+PIN,STRIPE
+YOUR,SELF
+WE,ATHER
+HEAD,LAND
+HEART,ACHE
+HOME,MADE
+HEART,BEAT
+HONEY,COMB
+BOOK,MARK
+FIRE,PLACE
+WATER,FALL
+BUTTER,FLY
+ARM,CHAIR
+AFTER,NOON
+BATH,ROOM
+BACK,BONE
+BACK,GROUND
+BACK,WARD
+BED,TIME
+BLUE,BELL
+BOOK,CASE
+CAMP,FIRE
+CANDLE,STICK
+DISH,WASHER
+DOG,HOUSE
+DOWN,STAIRS
+DRAGON,FLY
+DRESS,MAKER
+EAR,RING
+EVERY,BODY
+EVERY,THING
+FARM,HOUSE
+FOOT,BALL
+FOOT,PRINT
+GOLD,FISH
+GRAND,FATHER
+GRAND,MOTHER
+GRASS,HOPPER
+GROUND,WORK
+HAIR,CUT
+HAND,BAG
+HAND,WRITING
+HEAD,ACHE
+HEAD,LIGHT
+HOME,WORK
+HORSE,BACK
+HOUSE,HOLD
+HOUSE,WORK
+IN,SIDE
+JELLY,FISH
+LADY,BIRD
+LIFE,BOAT
+LIGHT,HOUSE
+LIP,STICK
+MID,NIGHT
+MOTOR,WAY
+NAME,PLATE
+NEW,SPAPER
+NIGHT,MARE
+OUT,SIDE
+OVER,TAKE
+PAN,CAKE
+PAPER,BACK
+PLAY,GROUND
+POLICE,MAN
+POST,MAN
+RAIN,BOW
+RAIN,COAT
+RIVER,SIDE
+ROAD,SIDE
+SAIL,BOAT
+SAND,CASTLE
+SCARE,CROW
+SCHOOL,BOY
+SCHOOL,GIRL
+SEA,SIDE
+SHIP,WRECK
+SHOP,KEEPER
+SKATE,BOARD
+SNOW,BALL
+SNOW,MAN
+SOME,BODY
+SOME,TIMES
+SOME,WHERE
+SOUND,PROOF
+SPACE,SHIP
+STAIR,CASE
+STAR,FISH
+STEAM,BOAT
+SUN,FLOWER
+SUN,GLASSES
+SUN,LIGHT
+SUN,SET
+SUN,SHINE
+TABLE,CLOTH
+TABLE,SPOON
+TEA,POT
+THUNDER,STORM
+TIME,TABLE
+TOOTH,BRUSH
+TOOTH,PASTE
+UP,STAIRS
+WALL,PAPER
+WASH,ROOM
+WATCH,MAN
+WATER,COLOR
+WATER,PROOF
+WHEEL,CHAIR
+WOOD,LAND`;
+
+        const staticDictionary = {
+            "DONATION": "Something given to a cause or charity.",
+            "SLITHER": "To move with a sliding motion like a snake.",
+            "CARGO": "Goods carried on a ship, aircraft, or motor vehicle.",
+            "COMBAT": "Fighting between armed forces.",
+            "FORMAT": "The way in which something is arranged or set out.",
+            "FORBID": "To refuse to allow something.",
+            "RAMPAGE": "A period of violent and uncontrollable behavior.",
+            "HIGHBALL": "A type of cocktail served in a tall glass.",
+            "HANDSOME": "Good-looking or attractive.",
+            "ANOTHER": "Used to refer to an additional person or thing.",
+            "POWERLESS": "Without the ability to influence or control.",
+            "CENTRALLY": "In or near the center of an area.",
+            "CANON": "A general law, rule, or criterion by which something is judged.",
+            "AIRLINE": "A company that provides regular flights.",
+            "CARPET": "A floor covering made of thick woven fabric.",
+            "TARGET": "A person, object, or place selected as the aim of an attack.",
+            "FORTUNE": "Chance or luck as an external force affecting human affairs.",
+            "PARTRIDGE": "A short-tailed game bird.",
+            "CARTRIDGE": "A casing containing a charge and a bullet.",
+            "KNOWLEDGE": "Facts, information, and skills acquired through experience.",
+            "OUTLET": "A pipe or hole through which water or gas may escape.",
+            "ACTOR": "A person whose profession is acting.",
+            "FORECAST": "A prediction or estimate of future events.",
+            "ORDEAL": "A painful or horrific experience.",
+            "TRIPLET": "One of three children born at a single birth.",
+            "FACTOR": "A circumstance, fact, or influence that contributes to a result.",
+            "TURNCOAT": "A person who deserts one party or cause in order to join an opposing one.",
+            "WATERFALL": "A cascade of water falling from a height.",
+            "SOLID": "Firm and stable in shape; not liquid or fluid.",
+            "SEEDLING": "A young plant, especially one raised from seed.",
+            "EARWIG": "A small insect with pincers at the end of its abdomen.",
+            "ASCENT": "A climb or walk to the summit of a mountain or hill.",
+            "PAGEANT": "A public entertainment consisting of a procession or a play.",
+            "STIRRING": "Causing great excitement or strong emotion.",
+            "ATTACK": "An aggressive and violent action against a person or place.",
+            "INSCRIBE": "To write or carve on something.",
+            "BUTTERCUP": "A herbaceous plant with bright yellow cup-shaped flowers.",
+            "SATURN": "The sixth planet from the sun with large rings.",
+            "PASSAGE": "A way through which something may pass.",
+            "JUSTICE": "Fair behavior or treatment.",
+            "UPHOLD": "To confirm or support.",
+            "AMBUSH": "A surprise attack by people lying in wait.",
+            "WAGON": "A vehicle used for transporting goods or another specified purpose.",
+            "OUTPUT": "The amount of something produced.",
+            "BANDIT": "A robber or outlaw.",
+            "TOWING": "To pull a vehicle or boat along with a rope, chain, or tow bar.",
+            "DEADLOCK": "A situation, typically one involving opposing parties, in which no progress can be made.",
+            "RANSACK": "To go hurriedly through a place stealing things and causing damage.",
+            "PORTABLE": "Able to be easily carried or moved.",
+            "NOVICE": "A person new to and inexperienced in a job or situation.",
+            "FEATHER": "Structures that cover the bodies of birds.",
+            "HEATHER": "A purple-flowered plant.",
+            "HUMAN": "Relating to or characteristic of people.",
+            "COTTON": "A soft white fibrous substance.",
+            "SNAPPING": "To break suddenly and completely.",
+            "BARGAIN": "A thing bought or offered for sale more cheaply than is usual.",
+            "FURROW": "A long narrow trench made in the ground by a plow.",
+            "CABIN": "A small wooden shelter or house.",
+            "PUFFIN": "A hole-nesting auk with a large brightly colored beak.",
+            "RAILWAY": "A track made of steel rails along which trains run.",
+            "BARROW": "A wheelbarrow or a pushcart.",
+            "DAMAGE": "Harm caused to something in such a way as to impair its value.",
+            "AVOID": "Keep away from or stop oneself from doing something.",
+            "AWAY": "To or at a distance from a particular place.",
+            "TRAPDOOR": "A door in a floor or ceiling.",
+            "WEEKEND": "Saturday and Sunday.",
+            "NOTICE": "The fact of observing or paying attention to something.",
+            "CARTON": "A light box or container.",
+            "BEAT": "To strike a person or an animal repeatedly.",
+            "MEAN": "Intending to convey or refer to.",
+            "BEHIND": "At or to the far side of something.",
+            "TABLET": "A flat slab of stone, clay, or wood, used for writing.",
+            "BATON": "A thin stick used by a conductor.",
+            "BUTTON": "A small disk or knob sown onto a garment.",
+            "MANAGE": "Be in charge of.",
+            "CARCASE": "The dead body of an animal.",
+            "CAPABLE": "Having the ability, fitness, or quality necessary to do or achieve a specified thing.",
+            "QUESTION": "A sentence worded or expressed so as to elicit information.",
+            "BIRTHDAY": "The anniversary of the day on which a person was born.",
+            "FORGET": "Fail to remember.",
+            "CARROT": "A tapering orange-colored root vegetable.",
+            "INCREASE": "Become or make greater in size, amount, intensity, or degree.",
+            "MAYOR": "The elected head of a city, town, or other municipality.",
+            "PULLOVER": "A sweater with no fasteners that is put on by being pulled over the head.",
+            "ORBIT": "The curved path of a celestial object or spacecraft.",
+            "PRIMROSE": "A common plant which produces pale yellow flowers.",
+            "NAPKIN": "A square piece of cloth or paper used at a meal to wipe the fingers or lips.",
+            "ASKING": "Say something in order to obtain information or advice.",
+            "FORTNIGHT": "A period of two weeks.",
+            "BITTEN": "The past participle of bite.",
+            "FRIENDSHIP": "The emotions or conduct of friends.",
+            "RESTLESS": "Unable to rest or relax as a result of anxiety or boredom.",
+            "HERON": "A large fish-eating wading bird.",
+            "BANDAGE": "A strip of material used to bind a wound.",
+            "FORWARD": "Toward the front; in the direction that one is facing or traveling.",
+            "ISLAND": "A piece of land surrounded by water.",
+            "ROTTEN": "Decaying or enjoyed by bacteria.",
+            "OVERWEIGHT": "Above a weight considered normal or desirable.",
+            "POSTAGE": "The charge for mailing an item.",
+            "ADAPTABLE": "Able to adjust to new conditions.",
+            "KEYBOARD": "A panel of keys used to operate a computer.",
+            "CARETAKER": "A person employed to look after a public building.",
+            "CUPBOARD": "A cabinet or closet with shelves.",
+            "EYEBALL": "The entire ball of the eye.",
+            "RESTRAIN": "To prevent from doing something.",
+            "MANHOLE": "A small covered opening in a paved area.",
+            "OVERACT": "To act with unnecessary exaggeration.",
+            "SIDEBOARD": "A flat-topped piece of furniture used for storing table linen.",
+            "COPYRIGHT": "The exclusive legal right to use material.",
+            "NOBODY": "No person; no one.",
+            "NOWHERE": "Not in or at any place.",
+            "RUNAWAY": "A person who has run away.",
+            "OFFSPRING": "A person's child or children.",
+            "OUTLAW": "A person who has broken the law.",
+            "UNDERGROWTH": "A dense growth of shrubs and other plants.",
+            "SOMEONE": "An unspecified person.",
+            "WHATEVER": "Used to emphasize a lack of restriction in referring to anything.",
+            "UNDERTAKE": "Commit oneself to and begin.",
+            "OVERCOAT": "A long thick coat worn over other clothes.",
+            "SUNBURN": "Reddening and inflammation of the skin caused by overexposure to the sun.",
+            "UPON": "More formal term for on.",
+            "OUTBURST": "A sudden release of strong emotion.",
+            "VIEWPOINT": "A person's opinion or point of view.",
+            "STYLED": "Design or make in a particular form.",
+            "EVERGREEN": "A plant that retains green leaves throughout the year.",
+            "DATABASE": "A structured set of data held in a computer.",
+            "DOWNLOAD": "To copy data from one computer system to another.",
+            "BROADBAND": "A high-capacity transmission technique.",
+            "OVERDUE": "Not having arrived, happened, or been done by the expected time.",
+            "PASSPORT": "An official document issued by a government.",
+            "PINSTRIPE": "A very narrow stripe in cloth.",
+            "YOURSELF": "Used to refer to the person being addressed.",
+            "WEATHER": "The state of the atmosphere.",
+            "HEADLAND": "A narrow piece of land that projects from a coastline into the sea.",
+            "HEARTACHE": "Emotional pain or distress.",
+            "HOMEMADE": "Made at home rather than in a shop or factory.",
+            "HEARTBEAT": "The pulsation of the heart.",
+            "HONEYCOMB": "A structure of hexagonal cells of wax made by bees.",
+            "BOOKMARK": "A strip of leather, cardboard, or other material used to mark a place in a book.",
+            "FIREPLACE": "A place for a domestic fire.",
+            "BUTTERFLY": "An insect with two pairs of large wings that are covered in tiny scales.",
+            "ARMCHAIR": "A comfortable chair with side supports for a person's arms.",
+            "AFTERNOON": "The time from noon or lunchtime to evening.",
+            "BATHROOM": "A room containing a bathtub or shower and usually a washbasin and toilet.",
+            "BACKBONE": "The series of vertebrae extending from the skull to the pelvis.",
+            "BACKGROUND": "The part of a picture, scene, or design that forms a setting for the main figures.",
+            "BACKWARD": "Directed toward the back.",
+            "BEDTIME": "The usual time when someone goes to bed.",
+            "BLUEBELL": "A woodland plant with clusters of blue bell-shaped flowers.",
+            "BOOKCASE": "A piece of furniture with shelves for storing books.",
+            "CAMPFIRE": "An open-air fire in a camp.",
+            "CANDLESTICK": "A holder for a candle.",
+            "DISHWASHER": "A machine for washing dishes automatically.",
+            "DOGHOUSE": "A small shelter for a dog.",
+            "DOWNSTAIRS": "On or to a lower floor of a building.",
+            "DRAGONFLY": "A fast-flying insect with a long body and two pairs of large wings.",
+            "DRESSMAKER": "A person who makes women's clothes.",
+            "EARRING": "A piece of jewelry worn on the lobe or edge of the ear.",
+            "EVERYBODY": "Every person.",
+            "EVERYTHING": "All things.",
+            "FARMHOUSE": "The main house of a farm.",
+            "FOOTBALL": "A game played by two teams of eleven players with a round ball.",
+            "FOOTPRINT": "The mark left by a foot or shoe on a surface.",
+            "GOLDFISH": "A small reddish-golden Eurasian carp.",
+            "GRANDFATHER": "The father of one's father or mother.",
+            "GRANDMOTHER": "The mother of one's father or mother.",
+            "GRASSHOPPER": "A plant-eating insect with long hind legs used for jumping.",
+            "GROUNDWORK": "Preliminary or basic work.",
+            "HAIRCUT": "The style in which a person's hair is cut.",
+            "HANDBAG": "A small bag used by women for carrying personal items.",
+            "HANDWRITING": "A person's particular style of writing.",
+            "HEADACHE": "A continuous pain in the head.",
+            "HEADLIGHT": "A powerful light at the front of a motor vehicle.",
+            "HOMEWORK": "Schoolwork that a pupil is required to do at home.",
+            "HORSEBACK": "The back of a horse.",
+            "HOUSEHOLD": "A house and its occupants regarded as a unit.",
+            "HOUSEWORK": "Regular work done in housekeeping.",
+            "INSIDE": "The inner side or surface of something.",
+            "JELLYFISH": "A free-swimming marine coelenterate with a jelly-like body.",
+            "LADYBIRD": "A small beetle which is typically red with black spots.",
+            "LIFEBOAT": "A boat used for rescuing people in difficulties at sea.",
+            "LIGHTHOUSE": "A tower or other structure containing a beacon light to warn or guide ships at sea.",
+            "LIPSTICK": "Colored cosmetic applied to the lips.",
+            "MIDNIGHT": "Twelve o'clock at night.",
+            "MOTORWAY": "A dual-carriageway road designed for fast traffic.",
+            "NAMEPLATE": "A plate inscribed with a person's or organization's name.",
+            "NEWSPAPER": "A printed publication consisting of folded unstapled sheets and containing news.",
+            "NIGHTMARE": "A frightening or unpleasant dream or frightening experience.",
+            "OUTSIDE": "The external side or surface of something.",
+            "PANCAKE": "A thin, flat cake of batter, fried on both sides in a pan.",
+            "PAPERBACK": "A book bound in stiff paper or card.",
+            "PLAYGROUND": "An outdoor area provided for children to play in.",
+            "POLICEMAN": "A male member of a police force.",
+            "POSTMAN": "A person who is employed to deliver or collect letters and parcels.",
+            "RAINBOW": "An arch of colors visible in the sky.",
+            "RAINCOAT": "A waterproof coat.",
+            "RIVERSIDE": "The ground along the edge of a river.",
+            "ROADSIDE": "The strip of land beside a road.",
+            "SAILBOAT": "A boat propelled by sails.",
+            "SANDCASTLE": "A model of a castle built out of sand.",
+            "SCARECROW": "An object made to resemble a human figure, set up to scare birds away from a field.",
+            "SCHOOLBOY": "A boy attending school.",
+            "SCHOOLGIRL": "A girl attending school.",
+            "SEASIDE": "A place by the sea.",
+            "SHIPWRECK": "The destruction of a ship at sea by sinking or breaking up.",
+            "SHOPKEEPER": "A person who owns and manages a small shop.",
+            "SKATEBOARD": "A short narrow board with two small wheels fixed to the bottom of either end.",
+            "SNOWBALL": "A ball of packed snow.",
+            "SNOWMAN": "A figure of a person made of packed snow.",
+            "SOMEBODY": "A person who is unspecified.",
+            "SOMETIMES": "Occasionally.",
+            "SOMEWHERE": "In or to some place.",
+            "SOUNDPROOF": "Not allowing sound to pass through.",
+            "SPACESHIP": "A spacecraft.",
+            "STAIRCASE": "A set of stairs and its surrounding structure.",
+            "STARFISH": "A marine echinoderm with five or more radiating arms.",
+            "STEAMBOAT": "A boat which is propelled by a steam engine.",
+            "SUNFLOWER": "A tall North American plant of the daisy family.",
+            "SUNGLASSES": "Glasses with tinted lenses to protect the eyes from sunlight.",
+            "SUNLIGHT": "Light from the sun.",
+            "SUNSET": "The time in the evening when the sun disappears or daylight fades.",
+            "SUNSHINE": "Direct sunlight unbroken by cloud.",
+            "TABLECLOTH": "A cloth used for covering a table.",
+            "TABLESPOON": "A large spoon for serving food.",
+            "TEAPOT": "A pot with a handle, spout, and lid, in which tea is brewed and from which it is poured.",
+            "THUNDERSTORM": "A storm with thunder and lightning and typically also heavy rain or hail.",
+            "TIMETABLE": "A chart showing the departure and arrival times of trains, buses, or aircraft.",
+            "TOOTHBRUSH": "A small brush used for cleaning the teeth.",
+            "TOOTHPASTE": "A thick paste used with a toothbrush to clean the teeth.",
+            "UPSTAIRS": "On or to an upper floor of a building.",
+            "WALLPAPER": "Paper used for pasting on to the interior walls of rooms.",
+            "WASHROOM": "A room with washing and toilet facilities.",
+            "WATCHMAN": "A man employed to look after an empty building.",
+            "WATERCOLOR": "Artists' paint made with a water-soluble binder.",
+            "WATERPROOF": "Impervious to water.",
+            "WHEELCHAIR": "A chair on wheels for use by people who are unable to walk.",
+            "WOODLAND": "Land covered with trees."
         };
 
-        const masterWordList = [
-            { p: "Light", s: "house", m: "A tower guiding ships.", e: "The lighthouse cut through the fog." },
-            { p: "Skate", s: "board", m: "A board with wheels.", e: "He rode his skateboard." },
-            { p: "Back", s: "ground", m: "Part of a scene further away.", e: "Mountains were in the background." },
-            { p: "Water", s: "proof", m: "Does not let water through.", e: "His boots are waterproof." },
-            { p: "Weather", s: "man", m: "One who predicts weather.", e: "The weatherman said it would rain." },
-            { p: "Earth", s: "quake", m: "Shaking of the ground.", e: "The earthquake shook the city." },
-            { p: "Thunder", s: "storm", m: "Rain with lightning.", e: "A thunderstorm is coming." },
-            { p: "Scare", s: "crow", m: "Object to keep birds away.", e: "The scarecrow stood in the field." },
-            { p: "Wheel", s: "chair", m: "Chair for mobility.", e: "He uses a wheelchair." },
-            { p: "Grass", s: "hopper", m: "A jumping insect.", e: "The grasshopper jumped away." },
-            { p: "Fire", s: "fly", m: "A glowing beetle.", e: "The firefly flickered in the dark." },
-            { p: "Back", s: "yard", m: "Area behind a house.", e: "We played catch in the backyard." },
-            { p: "Moon", s: "light", m: "Light from the moon.", e: "The lake sparkled in the moonlight." },
-            { p: "Sun", s: "flower", m: "A tall yellow flower.", e: "The sunflower turned toward the sun." },
-            { p: "Bird", s: "house", m: "A shelter for birds.", e: "A blue jay flew into the birdhouse." },
-            { p: "Rain", s: "bow", m: "Colorful arch in the sky.", e: "A rainbow appeared after the storm." },
-            { p: "Water", s: "fall", m: "River falling over a cliff.", e: "The waterfall was loud and misty." },
-            { p: "Lady", s: "bug", m: "A small red beetle.", e: "A ladybug landed on my arm." },
-            { p: "Side", s: "walk", m: "Path for people to walk.", e: "Don't run on the concrete sidewalk." },
-            { p: "Space", s: "ship", m: "Vehicle for space travel.", e: "The spaceship blasted off to Mars." },
-            { p: "Snow", s: "ball", m: "Ball made of snow.", e: "She threw a snowball at her brother." },
-            { p: "Snow", s: "man", m: "Human figure made of snow.", e: "We gave the snowman a carrot nose." },
-            { p: "Play", s: "ground", m: "Area for children to play.", e: "Meet me at the playground at noon." },
-            { p: "Sand", s: "box", m: "Box filled with sand.", e: "The toddler is playing in the sandbox." },
-            { p: "See", s: "saw", m: "A long plank for playing.", e: "Two kids went up and down on the seesaw." },
-            { p: "Break", s: "fast", m: "First meal of the day.", e: "I had eggs and toast for breakfast." },
-            { p: "Mail", s: "man", m: "Person who delivers mail.", e: "The mailman left a package today." },
-            { p: "Mail", s: "box", m: "Container for mail.", e: "Check the mailbox for letters." },
-            { p: "Air", s: "port", m: "Place where planes land.", e: "The airport was very busy." },
-            { p: "Post", s: "card", m: "Card for sending messages.", e: "She sent a postcard from Hawaii." },
-            { p: "Rain", s: "coat", m: "Waterproof coat.", e: "Wear your raincoat so you stay dry." },
-            { p: "Flash", s: "light", m: "Battery-powered light.", e: "He used a flashlight in the cave." },
-            { p: "Back", s: "pack", m: "Bag carried on the back.", e: "Put your books in your backpack." },
-            { p: "Ship", s: "wreck", m: "Remains of a sunken ship.", e: "Divers found the ancient shipwreck." },
-            { p: "Coast", s: "line", m: "Where land meets the sea.", e: "The coastline is very rocky here." },
-            { p: "Butter", s: "fly", m: "Insects with colorful wings.", e: "A butterfly emerged from the cocoon." },
-            { p: "Window", s: "sill", m: "Shelf at the bottom of a window.", e: "A cat sat on the sunny windowsill." },
-            { p: "Ear", s: "muffs", m: "Coverings to keep ears warm.", e: "Put on your earmuffs; it's freezing!" },
-            { p: "Wood", s: "cutter", m: "Person who chops wood.", e: "The woodcutter went into the forest." },
-            { p: "Fire", s: "place", m: "Place for a fire in a house.", e: "We roasted marshmallows by the fireplace." },
-            { p: "Bed", s: "room", m: "Room for sleeping.", e: "My bedroom has blue walls." },
-            { p: "Book", s: "shelf", m: "Shelf for holding books.", e: "The bookshelf is full of stories." },
-            { p: "Lamp", s: "shade", m: "Cover for a lamp.", e: "The lampstand has a flowery lampshade." },
-            { p: "Note", s: "book", m: "Book with blank pages.", e: "I wrote a poem in my notebook." },
-            { p: "Cup", s: "board", m: "Cabinet for dishes or food.", e: "The cereal is in the cupboard." },
-            { p: "Basket", s: "ball", m: "Game played with a hoop.", e: "He made a three-pointer in basketball." },
-            { p: "Straw", s: "berry", m: "Red fruit with seeds.", e: "A strawberry is sweet and juicy." },
-            { p: "Cup", s: "cake", m: "A small cake for one person.", e: "I ate a chocolate cupcake." },
-            { p: "Ball", s: "park", m: "A field for playing ball.", e: "We went to the ballpark to see a game." },
-            { p: "Champion", s: "ship", m: "The position of winner.", e: "They won the soccer championship." },
-            { p: "Jelly", s: "fish", m: "Sea creature with tentacles.", e: "Don't touch the jellyfish in the water." },
-            { p: "Star", s: "fish", m: "Star-shaped sea animal.", e: "I found a starfish on the beach." },
-            { p: "Sea", s: "weed", m: "Plants that grow in the sea.", e: "The seaweed washed up on the sand." },
-            { p: "Sub", s: "marine", m: "A ship that goes underwater.", e: "The submarine dove deep into the ocean." },
-            { p: "Salt", s: "water", m: "Water containing salt.", e: "The ocean is made of saltwater." },
-            { p: "Cow", s: "boy", m: "A man who herds cattle.", e: "The cowboy rode a brown horse." },
-            { p: "Rattle", s: "snake", m: "Snake with a rattling tail.", e: "We heard the rattlesnake in the grass." },
-            { p: "Camp", s: "fire", m: "Fire built while camping.", e: "We told stories around the campfire." },
-            { p: "Star", s: "light", m: "Light from the stars.", e: "The desert was quiet under the starlight." },
-            { p: "Dragon", s: "fly", m: "Insect with long wings.", e: "A blue dragonfly hovered over the pond." },
-            { p: "Screw", s: "driver", m: "Tool for turning screws.", e: "He used a screwdriver to fix the toy." },
-            { p: "Hammer", s: "head", m: "Part of a hammer used to hit.", e: "Be careful not to hit your thumb." },
-            { p: "Key", s: "board", m: "Set of keys for typing.", e: "The keyboard is missing a letter." },
-            { p: "Touch", s: "pad", m: "Sensitive area on a laptop.", e: "Use the touchpad to move the cursor." },
-            { p: "Finger", s: "print", m: "Mark made by a finger.", e: "A fingerprint was left on the glass." },
-            { p: "Grand", s: "mother", m: "The mother of your parent.", e: "My grandmother makes the best cookies." },
-            { p: "Gold", s: "ring", m: "A ring made of gold.", e: "She wore a shiny goldring on her hand." },
-            { p: "Ginger", s: "bread", m: "Cake flavored with ginger.", e: "We built a gingerbread house." },
-            { p: "Cheese", s: "cake", m: "Cake made with cream cheese.", e: "I had a slice of blueberry cheesecake." },
-            { p: "Week", s: "end", m: "Saturday and Sunday.", e: "I'm going to the park this weekend." },
-            { p: "Sea", s: "shell", m: "Shell of a sea creature.", e: "I found a spiral seashell." },
-            { p: "Sand", s: "castle", m: "Castle made of sand.", e: "The tide washed away my sandcastle." },
-            { p: "Sea", s: "shore", m: "The land along the sea.", e: "We walked along the seashore at sunset." },
-            { p: "Sun", s: "glasses", m: "Glasses to protect eyes.", e: "Put on your sunglasses; it's bright." },
-            { p: "Sun", s: "rise", m: "When the sun comes up.", e: "The sunrise turned the sky pink." },
-            { p: "Quarter", s: "back", m: "Player who leads the offense.", e: "The quarterback threw a long pass." },
-            { p: "Score", s: "board", m: "Board showing the score.", e: "Look at the scoreboard to see who's winning." },
-            { p: "Touch", s: "down", m: "A score in football.", e: "The team scored a touchdown!" },
-            { p: "Foot", s: "ball", m: "A sport played with a ball.", e: "We played football in the park." },
-            { p: "Goal", s: "keeper", m: "Player who guards the goal.", e: "The goalkeeper blocked the shot." },
-            { p: "Tooth", s: "fairy", m: "Fairy that collects teeth.", e: "The toothfairy visited last night." },
-            { p: "Tooth", s: "brush", m: "Brush for cleaning teeth.", e: "Use your toothbrush twice a day." },
-            { p: "Tooth", s: "paste", m: "Cream for cleaning teeth.", e: "Squeeze some toothpaste onto the brush." },
-            { p: "Bed", s: "time", m: "Time to go to sleep.", e: "Bedtime is at 8 o'clock." },
-            { p: "Day", s: "dream", m: "Dreaming while awake.", e: "I had a daydream about flying." },
-            { p: "Super", s: "hero", m: "Person with special powers.", e: "Batman is my favorite superhero." },
-            { p: "Land", s: "slide", m: "Falling of earth or rock.", e: "The road was closed due to a landslide." },
-            { p: "Whirl", s: "wind", m: "A spinning wind.", e: "The whirlwind blew the leaves away." },
-            { p: "Moon", s: "beam", m: "A ray of moonlight.", e: "A moonbeam lit up the room." },
-            { p: "Sun", s: "beam", m: "A ray of sunlight.", e: "A sunbeam came through the window." },
-            { p: "Pop", s: "corn", m: "Corn that has popped.", e: "We ate popcorn at the movies." },
-            { p: "Milk", s: "shake", m: "A cold milk drink.", e: "I want a chocolate milkshake." },
-            { p: "Pepper", s: "mint", m: "A minty candy.", e: "I had a refreshing peppermint." },
-            { p: "Space", s: "station", m: "Structure in space.", e: "Astronauts live on the space station." },
-            { p: "Life", s: "boat", m: "Small boat for emergencies.", e: "Every ship must have a lifeboat." },
-            { p: "Honey", s: "bee", m: "Bee that makes honey.", e: "The honeybee buzzed around the flower." },
-            { p: "Honey", s: "comb", m: "Wax structure for honey.", e: "The honeycomb was full of sweet honey." },
-            { p: "After", s: "noon", m: "Part of day after 12pm.", e: "We went swimming in the afternoon." },
-            { p: "Water", s: "lily", m: "Plant that grows in water.", e: "A frog sat on the waterlily." },
-            { p: "Butter", s: "milk", m: "Liquid left after making butter.", e: "She used buttermilk to make pancakes." }
-        ];
-
+        let masterWordList = [];
         let shuffledWordList = [];
         let currentLevel = 1;
         let score = 0;
@@ -266,9 +614,46 @@
         let triesForCurrentWord = 0;
         let wrongWords = [];
         let isProcessing = false;
-        const totalLevels = 20;
+        let totalLevels = 0;
 
-        // Shuffle logic for start of game
+        // CSV Parser and Validator
+        function processCSV() {
+            const lines = rawCSVData.split('\n');
+            let skipped = 0;
+            const parsed = [];
+
+            lines.forEach(line => {
+                const parts = line.split(',');
+                
+                // Skip header if present
+                if (parts[0].trim().toLowerCase() === "part1") return;
+
+                // Validation: 2 non-empty values, A-Z only (using regex for safety)
+                if (parts.length === 2 && 
+                    parts[0].trim() !== "" && 
+                    parts[1].trim() !== "" && 
+                    /^[A-Z]+$/.test(parts[0].trim()) && 
+                    /^[A-Z]+$/.test(parts[1].trim())) {
+                    
+                    const p = parts[0].trim();
+                    const s = parts[1].trim();
+                    const full = p + s;
+                    
+                    parsed.push({
+                        p: p,
+                        s: s,
+                        m: staticDictionary[full] || `A compound word formed from ${p} and ${s}.`
+                    });
+                } else {
+                    skipped++;
+                }
+            });
+
+            console.log(`Parsed ${parsed.length} words. Skipped ${skipped} invalid rows.`);
+            masterWordList = parsed;
+            totalLevels = Math.floor(masterWordList.length / 5);
+        }
+
         function shuffleAllWords() {
             shuffledWordList = [...masterWordList].sort(() => Math.random() - 0.5);
         }
@@ -281,12 +666,11 @@
             const startIdx = (lvl - 1) * 5;
             const words = shuffledWordList.slice(startIdx, startIdx + 5);
             
-            if (words.length === 0 || lvl > totalLevels) {
+            if (words.length < 5 || lvl > totalLevels) {
                 showEndGameSummary();
                 return;
             }
 
-            // Shuffle position of words in columns for extra randomness
             renderColumn('left-col', [...words].sort(() => Math.random() - 0.5), 'prefix');
             renderColumn('right-col', [...words].sort(() => Math.random() - 0.5), 'suffix');
             updateUI();
@@ -361,7 +745,7 @@
             
             setTimeout(() => {
                 finishWordRound();
-            }, 400);
+            }, 600);
         }
 
         function revealCorrectAnswer(pairId) {
@@ -377,7 +761,7 @@
             
             setTimeout(() => {
                 finishWordRound();
-            }, 1000);
+            }, 1200);
         }
 
         function showWordMeaning(word) {
@@ -385,7 +769,6 @@
             box.style.opacity = '1';
             document.getElementById('word-title').textContent = word.p + word.s;
             document.getElementById('word-meaning').textContent = word.m;
-            document.getElementById('word-example').textContent = "Example: " + word.e;
         }
 
         function finishWordRound() {
@@ -430,14 +813,6 @@
             modal.classList.remove('hidden');
         }
 
-        function showLevelStory() {
-            // Note: Story is now "Level X" specific but word order is randomized.
-            document.getElementById('story-content').textContent = levelStories[currentLevel] || "Master this level to see the story!";
-            document.getElementById('story-modal').classList.remove('hidden');
-        }
-        
-        function closeStoryModal() { document.getElementById('story-modal').classList.add('hidden'); }
-        
         function startNextLevel() { 
             document.getElementById('overlay').classList.add('hidden'); 
             if (currentLevel >= totalLevels) {
@@ -449,7 +824,8 @@
         }
 
         window.onload = () => {
-            shuffleAllWords(); // Fully randomize the deck
+            processCSV();
+            shuffleAllWords();
             loadLevel(1);
         };
     </script>

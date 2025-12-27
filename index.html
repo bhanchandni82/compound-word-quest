@@ -66,10 +66,24 @@
             from { transform: scale(1); }
             to { transform: scale(1.1); }
         }
+        
+        .found-tag {
+            animation: tagPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: #16a34a;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            white-space: nowrap;
+        }
+        @keyframes tagPop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
-    <!-- Top Stats Bar -->
     <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl relative">
         <div class="text-center">
             <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Level</span>
@@ -80,13 +94,10 @@
             <span id="score-display" class="text-xl font-black text-yellow-400">0</span>
         </div>
         <div class="flex items-center gap-3">
-             <button onclick="toggleSettings()" class="bg-slate-700 p-2 rounded-lg text-slate-300 hover:bg-slate-600 transition-colors">
-                ⚙️
-            </button>
+             <button onclick="toggleSettings()" class="bg-slate-700 p-2 rounded-lg text-slate-300 hover:bg-slate-600 transition-colors">⚙️</button>
         </div>
     </div>
 
-    <!-- Mode & Progress -->
     <div class="w-full max-w-md flex justify-between items-center px-2 mb-2">
         <span id="mode-display" class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">LOADING...</span>
         <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -94,53 +105,41 @@
         </div>
     </div>
 
-    <div id="instruction-bar" class="w-full max-w-md py-3 mb-4 bg-slate-700/50 rounded-xl text-center text-xs font-bold text-slate-300 italic">
-        Select the FIRST part of a word to begin!
-    </div>
+    <div id="instruction-bar" class="w-full max-w-md py-3 mb-4 bg-slate-700/50 rounded-xl text-center text-xs font-bold text-slate-300 italic">Master the compounds!</div>
 
-    <!-- Main Game Viewport -->
     <div id="game-viewport" class="relative w-full max-w-md bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden min-h-[450px]">
-        <!-- Match Mode -->
+        
+        <!-- Global Found Words List -->
+        <div id="found-words-list" class="bg-indigo-900/40 p-2 flex flex-wrap gap-1.5 justify-center border-b border-indigo-500/20 min-h-[45px] transition-all"></div>
+
         <div id="match-container" class="grid grid-cols-2 gap-4 p-4 hidden">
             <div id="left-col" class="flex flex-col gap-3"></div>
             <div id="right-col" class="flex flex-col gap-3"></div>
         </div>
         
-        <!-- Bubble Mode -->
         <div id="bubble-container" class="absolute inset-0 hidden flex flex-col">
-            <div id="bubble-found-list" class="bg-indigo-900/40 p-2 flex flex-wrap gap-1.5 justify-center border-b border-indigo-500/20 min-h-[50px]"></div>
             <div id="bubble-arena" class="relative flex-grow"></div>
         </div>
 
-        <!-- Placeholder for Catch Mode if implemented later or just a placeholder for logic extension -->
-        <div id="catch-container" class="absolute inset-0 hidden flex items-center justify-center text-slate-500 italic">Catch Mode Placeholder</div>
+        <div id="grid-container" class="grid grid-cols-3 gap-2 p-4 hidden"></div>
     </div>
 
-    <!-- Feedback Box -->
     <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-2xl opacity-0 transition-all duration-200 text-center shadow-lg">
         <p id="word-title" class="text-indigo-300 font-bold uppercase text-sm mb-1 tracking-widest"></p>
         <p id="word-meaning" class="text-slate-200 text-sm italic"></p>
     </div>
 
-    <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 bg-slate-950/80 hidden z-[60] flex items-center justify-center p-6">
         <div class="bg-slate-800 p-6 rounded-3xl w-full max-w-xs border border-slate-700">
             <h3 class="text-xl font-bold mb-4 text-center">Settings</h3>
             <div class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <span>Mute Sounds</span>
-                    <input type="checkbox" id="mute-toggle" class="w-6 h-6">
-                </div>
-                <div class="flex justify-between items-center">
-                    <span>Calm Mode</span>
-                    <input type="checkbox" id="calm-toggle" class="w-6 h-6">
-                </div>
+                <div class="flex justify-between items-center"><span>Mute Sounds</span><input type="checkbox" id="mute-toggle" class="w-6 h-6"></div>
+                <div class="flex justify-between items-center"><span>Calm Mode</span><input type="checkbox" id="calm-toggle" class="w-6 h-6"></div>
                 <button onclick="toggleSettings()" class="w-full bg-indigo-600 py-3 rounded-xl font-bold mt-4">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Overlays -->
     <div id="overlay" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-50 p-6">
         <div class="bg-slate-800 p-8 rounded-3xl text-center max-w-xs w-full border border-indigo-500/30 shadow-2xl">
             <div class="text-6xl mb-4">🌟</div>
@@ -188,7 +187,9 @@
         let score = 0;
         let levelWords = [];
         let isProcessing = false;
-        let gameModeSequence = ['BUBBLE', 'MATCH']; // We can add 'CATCH' here later
+        
+        // Removed FALLING mode
+        let gameModeSequence = ['MATCH', 'BUBBLE', 'GRID']; 
 
         function processCSV() {
             const lines = rawCSVData.split('\n');
@@ -197,41 +198,65 @@
                 return { p, s, full: p + s, m: "A compound word." };
             });
             masterWordList.sort(() => Math.random() - 0.5);
-            // Randomize starting sequence at session start
-            gameModeSequence.sort(() => Math.random() - 0.5);
+        }
+
+        function getUniqueWordsForLevel(count) {
+            const levelSet = [];
+            const usedPrefixes = new Set();
+            const usedSuffixes = new Set();
+            const startOffset = Math.floor(Math.random() * masterWordList.length);
+            
+            for (let i = 0; i < masterWordList.length; i++) {
+                const idx = (startOffset + i) % masterWordList.length;
+                const word = masterWordList[idx];
+                if (!usedPrefixes.has(word.p) && !usedSuffixes.has(word.s)) {
+                    levelSet.push(word);
+                    usedPrefixes.add(word.p);
+                    usedSuffixes.add(word.s);
+                }
+                if (levelSet.length >= count) break;
+            }
+            return levelSet;
         }
 
         function setupLevel() {
-            const startIdx = (currentLevel - 1) * 5 % masterWordList.length;
-            levelWords = masterWordList.slice(startIdx, startIdx + 5);
+            levelWords = getUniqueWordsForLevel(5);
+            
             document.getElementById('level-display').textContent = currentLevel;
             document.getElementById('meaning-box').style.opacity = '0';
             document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('found-words-list').innerHTML = '';
             
-            // Determine mode from sequence
             const modeIndex = (currentLevel - 1) % gameModeSequence.length;
             const currentMode = gameModeSequence[modeIndex];
-            
             document.getElementById('mode-display').textContent = currentMode + " MODE";
             
-            // Hide all containers
-            document.getElementById('match-container').classList.add('hidden');
-            document.getElementById('bubble-container').classList.add('hidden');
+            ['match-container', 'bubble-container', 'grid-container'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
             
             if (currentMode === 'BUBBLE') initBubbleMode();
             else if (currentMode === 'MATCH') initMatchMode();
+            else if (currentMode === 'GRID') initGridMode();
+        }
+
+        function addToFoundList(word) {
+            const shelf = document.getElementById('found-words-list');
+            const tag = document.createElement('span');
+            tag.className = 'found-tag';
+            tag.textContent = word;
+            shelf.appendChild(tag);
         }
 
         function initMatchMode() {
-            const matchContainer = document.getElementById('match-container');
+            const container = document.getElementById('match-container');
             const leftCol = document.getElementById('left-col');
             const rightCol = document.getElementById('right-col');
-            matchContainer.classList.remove('hidden');
+            container.classList.remove('hidden');
             leftCol.innerHTML = ''; rightCol.innerHTML = '';
             
             let matchCount = 0;
             let selectedPre = null;
-
             const prefixes = [...levelWords].sort(() => Math.random() - 0.5);
             const suffixes = [...levelWords].sort(() => Math.random() - 0.5);
 
@@ -243,8 +268,7 @@
                     if (btn.classList.contains('bg-green-600') || isProcessing) return;
                     AudioEngine.tap();
                     if (selectedPre) selectedPre.classList.remove('selected');
-                    selectedPre = btn;
-                    btn.classList.add('selected');
+                    selectedPre = btn; btn.classList.add('selected');
                 };
                 leftCol.appendChild(btn);
                 btn.dataset.id = w.full;
@@ -257,24 +281,19 @@
                 btn.onclick = () => {
                     if (btn.classList.contains('bg-green-600') || !selectedPre || isProcessing) return;
                     if (selectedPre.dataset.id === w.full) {
-                        isProcessing = true;
-                        AudioEngine.correct();
+                        isProcessing = true; AudioEngine.correct();
                         btn.classList.add('bg-green-600', 'border-green-400');
                         selectedPre.classList.remove('selected');
                         selectedPre.classList.add('bg-green-600', 'border-green-400');
                         score += 100; matchCount++;
                         showWordMeaning(w);
-                        setTimeout(() => {
-                            checkLevelComplete(matchCount, 5);
-                            isProcessing = false;
-                        }, 500);
+                        addToFoundList(w.full);
+                        setTimeout(() => { checkLevelComplete(matchCount, 5); isProcessing = false; }, 500);
                         selectedPre = null;
                     } else {
-                        AudioEngine.wrong();
-                        btn.classList.add('shake');
+                        AudioEngine.wrong(); btn.classList.add('shake');
                         setTimeout(() => btn.classList.remove('shake'), 400);
-                        selectedPre.classList.remove('selected');
-                        selectedPre = null;
+                        selectedPre.classList.remove('selected'); selectedPre = null;
                     }
                     updateUI();
                 };
@@ -286,9 +305,8 @@
             let bubbleMatches = 0;
             let firstBubble = null;
             const arena = document.getElementById('bubble-arena');
-            const foundList = document.getElementById('bubble-found-list');
             document.getElementById('bubble-container').classList.remove('hidden');
-            arena.innerHTML = ''; foundList.innerHTML = '';
+            arena.innerHTML = '';
             
             const parts = [];
             levelWords.forEach(w => {
@@ -309,21 +327,16 @@
                     if (b.classList.contains('opacity-0') || isProcessing) return;
                     if (!firstBubble) {
                         if (p.type !== 'prefix') { AudioEngine.wrong(); b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; }
-                        AudioEngine.tap();
-                        firstBubble = { el: b, id: p.id };
+                        AudioEngine.tap(); firstBubble = { el: b, id: p.id };
                         b.classList.add('active-selection', 'bg-indigo-600');
                     } else if (firstBubble.el === b) {
                         firstBubble = null; b.classList.remove('active-selection', 'bg-indigo-600');
                     } else {
                         if (firstBubble.id === p.id && p.type === 'suffix') {
-                            isProcessing = true;
-                            AudioEngine.pop(); AudioEngine.correct();
+                            isProcessing = true; AudioEngine.pop(); AudioEngine.correct();
                             b.classList.add('opacity-0', 'scale-150');
                             firstBubble.el.classList.add('opacity-0', 'scale-150');
-                            const tag = document.createElement('span');
-                            tag.className = 'bg-green-600 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shadow-sm border border-green-400/30';
-                            tag.textContent = p.id;
-                            foundList.appendChild(tag);
+                            addToFoundList(p.id);
                             score += 100; bubbleMatches++;
                             showWordMeaning(levelWords.find(w => w.full === p.id));
                             setTimeout(() => { checkLevelComplete(bubbleMatches, 5); isProcessing = false; }, 500);
@@ -335,6 +348,46 @@
                     }
                 };
                 arena.appendChild(b);
+            });
+        }
+
+        function initGridMode() {
+            const container = document.getElementById('grid-container');
+            container.classList.remove('hidden'); container.innerHTML = '';
+            let gridMatches = 0; let selected = null;
+            const parts = [];
+            levelWords.forEach(w => {
+                parts.push({ text: w.p, id: w.full, type: 'p' });
+                parts.push({ text: w.s, id: w.full, type: 's' });
+            });
+            parts.sort(() => Math.random() - 0.5);
+            parts.forEach(p => {
+                const btn = document.createElement('div');
+                btn.className = 'word-btn bg-slate-800 border-2 border-slate-700 text-xs aspect-square';
+                btn.textContent = p.text;
+                btn.onclick = () => {
+                    if (btn.classList.contains('bg-green-600') || isProcessing) return;
+                    AudioEngine.tap();
+                    if (!selected) { selected = { el: btn, data: p }; btn.classList.add('selected'); }
+                    else if (selected.el === btn) { selected = null; btn.classList.remove('selected'); }
+                    else {
+                        if (selected.data.id === p.id && selected.data.type !== p.type) {
+                            isProcessing = true; AudioEngine.correct();
+                            btn.classList.add('bg-green-600', 'border-green-400');
+                            selected.el.classList.add('bg-green-600', 'border-green-400');
+                            addToFoundList(p.id);
+                            score += 100; gridMatches++;
+                            showWordMeaning(levelWords.find(w => w.full === p.id));
+                            setTimeout(() => { checkLevelComplete(gridMatches, 5); isProcessing = false; }, 500);
+                        } else {
+                            AudioEngine.wrong(); btn.classList.add('shake');
+                            setTimeout(() => btn.classList.remove('shake'), 400);
+                            selected.el.classList.remove('selected');
+                        }
+                        selected = null; updateUI();
+                    }
+                };
+                container.appendChild(btn);
             });
         }
 
@@ -350,17 +403,12 @@
         }
 
         function showWordMeaning(word) {
-            const box = document.getElementById('meaning-box');
-            box.style.opacity = '1';
+            const box = document.getElementById('meaning-box'); box.style.opacity = '1';
             document.getElementById('word-title').textContent = word.full;
             document.getElementById('word-meaning').textContent = "A compound word formed from " + word.p + " and " + word.s + ".";
         }
 
-        function startNextLevel() {
-            document.getElementById('overlay').classList.add('hidden');
-            currentLevel++; setupLevel();
-        }
-
+        function startNextLevel() { document.getElementById('overlay').classList.add('hidden'); currentLevel++; setupLevel(); }
         function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
         function updateUI() { document.getElementById('score-display').textContent = score; }
         

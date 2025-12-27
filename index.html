@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Compound Quest: Expert Edition&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body { background: #0f172a; color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.word-btn { transition: all 0.2s; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; min-height: 60px; text-align: center; padding: 8px; font-weight: bold; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.selected { background-color: #4f46e5 !important; border-color: #818cf8 !important; transform: scale(1.05); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.correct-anim { background-color: #166534 !important; border-color: #22c55e !important; opacity: 0.6; cursor: default; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.shake { animation: shake 0.4s; }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body class="flex flex-col items-center p-4 min-h-screen"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="text-center"&gt;&lt;span class="text-[10px] text-slate-400 block"&gt;Level&lt;/span&gt;&lt;span id="level-display" class="text-xl font-black text-indigo-400"&gt;1/20&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="text-center"&gt;&lt;span class="text-[10px] text-slate-400 block"&gt;Score&lt;/span&gt;&lt;span id="score-display" class="text-xl font-black text-yellow-400"&gt;0&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden"&gt;&lt;div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="showLevelStory()" class="w-full max-w-md mb-4 py-2 bg-slate-700 rounded-xl text-sm font-bold"&gt;📖 Level Master Story&lt;/button&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="game-container" class="w-full max-w-md grid grid-cols-2 gap-4"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="left-col" class="flex flex-col gap-3"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="right-col" class="flex flex-col gap-3"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-xl opacity-0 transition-all text-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p id="word-title" class="text-indigo-300 font-bold uppercase text-xs mb-1"&gt;&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p id="word-meaning" class="text-slate-200 text-sm italic mb-2"&gt;&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p id="word-example" class="text-xs text-indigo-200 border-t border-indigo-500/20 pt-2"&gt;&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="story-modal" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-[60] p-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full"&gt;&lt;h3 class="text-indigo-400 font-bold mb-4"&gt;Level Story&lt;/h3&gt;&lt;p id="story-content" class="text-slate-300 italic text-sm"&gt;&lt;/p&gt;&lt;button onclick="closeStoryModal()" class="w-full mt-6 bg-slate-700 py-2 rounded-xl"&gt;Close&lt;/button&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="overlay" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-50 p-6"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="bg-slate-800 p-8 rounded-3xl text-center"&gt;&lt;div class="text-5xl mb-4"&gt;⭐&lt;/div&gt;&lt;h2 class="text-2xl font-black"&gt;Level Complete!&lt;/h2&gt;&lt;button onclick="startNextLevel()" class="w-full mt-4 bg-indigo-600 py-4 rounded-xl font-bold"&gt;Next Level&lt;/button&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const levelStories = {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>1: "The lighthouse keeper stood on the skateboard in the background, making sure his jacket was waterproof before the weatherman arrived.",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>2: "During the earthquake and thunderstorm, the scarecrow fell over the wheelchair in the field where the grasshopper lived."</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const masterWordList = [</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Light", s: "house", m: "A tower guiding ships.", e: "The lighthouse cut through the fog." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Skate", s: "board", m: "A board with wheels.", e: "He rode his skateboard." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Back", s: "ground", m: "Part of a scene further away.", e: "Mountains were in the background." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Water", s: "proof", m: "Does not let water through.", e: "His boots are waterproof." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Weather", s: "man", m: "One who predicts weather.", e: "The weatherman said it would rain." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Earth", s: "quake", m: "Shaking of the ground.", e: "The earthquake shook the city." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Thunder", s: "storm", m: "Rain with lightning.", e: "A thunderstorm is coming." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Scare", s: "crow", m: "Object to keep birds away.", e: "The scarecrow stood in the field." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Wheel", s: "chair", m: "Chair for mobility.", e: "He uses a wheelchair." },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{ p: "Grass", s: "hopper", m: "A jumping insect.", e: "The grasshopper jumped away." }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let currentLevel = 1, score = 0, completedInLevel = 0, selectedPrefix = null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function loadLevel(lvl) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>completedInLevel = 0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('meaning-box').style.opacity = '0';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const startIdx = (lvl - 1) * 5;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const words = masterWordList.slice(startIdx, startIdx + 5);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>renderColumn('left-col', [...words].sort(() =&gt; Math.random() - 0.5), 'prefix');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>renderColumn('right-col', [...words].sort(() =&gt; Math.random() - 0.5), 'suffix');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>updateUI();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function renderColumn(id, list, type) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const col = document.getElementById(id); col.innerHTML = '';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>list.forEach(item =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>const div = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>div.className = 'word-btn bg-slate-800 border-2 border-slate-700 rounded-xl shadow-md';</p>
+<p class="p1"><span class="Apple-converted-space">                </span>div.textContent = type === 'prefix' ? item.p : item.s;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>div.dataset.pairId = item.p + item.s;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>div.onclick = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>if (type === 'prefix') {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>if (selectedPrefix) selectedPrefix.classList.remove('selected');</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>selectedPrefix = div; div.classList.add('selected');</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>} else if (selectedPrefix) {</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>if (selectedPrefix.dataset.pairId === div.dataset.pairId) {</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>score += 100; handleSuccess(selectedPrefix, div, item);</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">                            </span>selectedPrefix.classList.remove('selected'); selectedPrefix = null;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>};</p>
+<p class="p1"><span class="Apple-converted-space">                </span>col.appendChild(div);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function handleSuccess(pre, suf, word) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>pre.classList.add('correct-anim'); suf.classList.add('correct-anim');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const box = document.getElementById('meaning-box'); box.style.opacity = '1';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('word-title').textContent = word.p + word.s;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('word-meaning').textContent = word.m;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('word-example').textContent = "Example: " + word.e;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>completedInLevel++; selectedPrefix = null;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (completedInLevel === 5) document.getElementById('overlay').classList.remove('hidden');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>updateUI();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function updateUI() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('level-display').textContent = currentLevel + "/20";</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('score-display').textContent = score;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('progress-bar').style.width = (completedInLevel / 5 * 100) + '%';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function showLevelStory() { document.getElementById('story-content').textContent = levelStories[currentLevel] || "Unlock level to read!"; document.getElementById('story-modal').classList.remove('hidden'); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function closeStoryModal() { document.getElementById('story-modal').classList.add('hidden'); }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function startNextLevel() { document.getElementById('overlay').classList.add('hidden'); currentLevel++; loadLevel(currentLevel); }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>window.onload = () =&gt; loadLevel(1);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>

@@ -301,10 +301,17 @@
                             tag.textContent = p.id;
                             foundList.appendChild(tag);
                             
+                            // Scroll to the end of the found list so the new word is visible
+                            foundList.scrollLeft = foundList.scrollWidth;
+
                             score += 100; bubbleMatches++;
                             showWordMeaning(levelWords.find(w => w.full === p.id));
-                            checkLevelComplete(bubbleMatches, 5);
-                            setTimeout(() => { isProcessing = false; }, 300);
+                            
+                            // Delayed completion check to ensure the UI updates before the overlay
+                            setTimeout(() => {
+                                checkLevelComplete(bubbleMatches, 5);
+                                isProcessing = false;
+                            }, 500);
                         } else {
                             // Incorrect match OR wrong order (clicked another prefix second)
                             AudioEngine.wrong();

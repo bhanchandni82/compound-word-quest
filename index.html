@@ -6,47 +6,155 @@
     <title>Compound Quest: Expert Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; }
-        .word-btn { transition: all 0.2s; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; min-height: 60px; text-align: center; padding: 8px; font-weight: bold; }
-        .selected { background-color: #4f46e5 !important; border-color: #818cf8 !important; transform: scale(1.05); }
-        .correct-anim { background-color: #166534 !important; border-color: #22c55e !important; opacity: 0.6; cursor: default; }
+        body { 
+            background: #0f172a; 
+            color: white; 
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; 
+            overflow-x: hidden; 
+            touch-action: manipulation; 
+        }
+        .word-btn { 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            cursor: pointer; 
+            user-select: none; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 60px; 
+            text-align: center; 
+            padding: 8px; 
+            font-weight: bold;
+            border-radius: 1rem;
+        }
+        .selected { 
+            background-color: #4f46e5 !important; 
+            border-color: #818cf8 !important; 
+            transform: scale(1.05); 
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);
+        }
+        .correct-anim { 
+            background-color: #166534 !important; 
+            border-color: #22c55e !important; 
+            opacity: 0.8; 
+            cursor: default; 
+            animation: pulse 0.4s ease-in-out;
+        }
+        .wrong-reveal {
+            background-color: #92400e !important;
+            border-color: #f59e0b !important;
+            opacity: 0.9;
+        }
         .shake { animation: shake 0.4s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes shake { 
+            0%, 100% { transform: translateX(0); } 
+            25% { transform: translateX(-8px); border-color: #ef4444; } 
+            75% { transform: translateX(8px); border-color: #ef4444; } 
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
-    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700">
-        <div class="text-center"><span class="text-[10px] text-slate-400 block">Level</span><span id="level-display" class="text-xl font-black text-indigo-400">1/20</span></div>
-        <div class="text-center"><span class="text-[10px] text-slate-400 block">Score</span><span id="score-display" class="text-xl font-black text-yellow-400">0</span></div>
-        <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all"></div></div>
+    <!-- Top Stats Bar -->
+    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl">
+        <div class="text-center">
+            <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Level</span>
+            <span id="level-display" class="text-xl font-black text-indigo-400">1/20</span>
+        </div>
+        <div class="text-center">
+            <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Score</span>
+            <span id="score-display" class="text-xl font-black text-yellow-400">0</span>
+        </div>
+        <div class="text-right">
+            <span id="tries-display" class="text-[10px] text-red-400 block font-bold uppercase">Tries: 0/3</span>
+            <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden mt-1">
+                <div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all duration-300"></div>
+            </div>
+        </div>
     </div>
 
-    <button onclick="showLevelStory()" class="w-full max-w-md mb-4 py-2 bg-slate-700 rounded-xl text-sm font-bold">📖 Level Master Story</button>
+    <div class="w-full max-w-md flex gap-2 mb-4">
+        <button onclick="showLevelStory()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-bold transition-colors">📖 Level Story</button>
+        <button onclick="showEndGameSummary()" class="px-4 py-3 bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 rounded-xl text-sm font-bold text-red-200 transition-colors">🏁 Finish</button>
+    </div>
 
+    <!-- Game Grid -->
     <div id="game-container" class="w-full max-w-md grid grid-cols-2 gap-4">
         <div id="left-col" class="flex flex-col gap-3"></div>
         <div id="right-col" class="flex flex-col gap-3"></div>
     </div>
 
-    <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-xl opacity-0 transition-all text-center">
-        <p id="word-title" class="text-indigo-300 font-bold uppercase text-xs mb-1"></p>
+    <!-- Feedback Box -->
+    <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-2xl opacity-0 transition-all duration-200 text-center shadow-lg">
+        <p id="word-title" class="text-indigo-300 font-bold uppercase text-sm mb-1 tracking-widest"></p>
         <p id="word-meaning" class="text-slate-200 text-sm italic mb-2"></p>
         <p id="word-example" class="text-xs text-indigo-200 border-t border-indigo-500/20 pt-2"></p>
     </div>
 
+    <!-- Story Modal -->
     <div id="story-modal" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-[60] p-6">
-        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full"><h3 class="text-indigo-400 font-bold mb-4">Level Story</h3><p id="story-content" class="text-slate-300 italic text-sm"></p><button onclick="closeStoryModal()" class="w-full mt-6 bg-slate-700 py-2 rounded-xl">Close</button></div>
+        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full border border-slate-700 shadow-2xl">
+            <h3 class="text-indigo-400 font-black text-xl mb-4">Master Level Story</h3>
+            <p id="story-content" class="text-slate-300 italic leading-relaxed"></p>
+            <button onclick="closeStoryModal()" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-bold transition-colors">Got it!</button>
+        </div>
     </div>
 
+    <!-- Level Complete Overlay -->
     <div id="overlay" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-50 p-6">
-        <div class="bg-slate-800 p-8 rounded-3xl text-center"><div class="text-5xl mb-4">⭐</div><h2 class="text-2xl font-black">Level Complete!</h2><button onclick="startNextLevel()" class="w-full mt-4 bg-indigo-600 py-4 rounded-xl font-bold">Next Level</button></div>
+        <div class="bg-slate-800 p-8 rounded-3xl text-center max-w-xs w-full border border-indigo-500/30 shadow-2xl">
+            <div class="text-6xl mb-4">🌟</div>
+            <h2 class="text-2xl font-black mb-2 text-white">Awesome!</h2>
+            <p class="text-slate-400 mb-6">Level <span id="completed-lvl">1</span> Complete!</p>
+            <button id="next-level-btn" onclick="startNextLevel()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95">Next Level 🚀</button>
+        </div>
+    </div>
+
+    <!-- End Game Summary Modal -->
+    <div id="endgame-modal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center hidden z-[100] p-6">
+        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full border border-yellow-500/30 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="text-5xl text-center mb-2">🏆</div>
+            <h2 class="text-2xl font-black text-center text-yellow-400 mb-1">Quest Complete!</h2>
+            <p id="final-score-display" class="text-center text-white font-bold mb-4 text-xl"></p>
+            
+            <div class="overflow-y-auto pr-2 mb-4">
+                <h3 class="text-indigo-400 font-bold mb-2 uppercase text-xs tracking-widest">Words to Practice:</h3>
+                <div id="wrong-words-list" class="space-y-2">
+                    <!-- List of wrong words -->
+                </div>
+            </div>
+
+            <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg">Play Again! 🔄</button>
+        </div>
     </div>
 
     <script>
         const levelStories = {
-            1: "The lighthouse keeper stood on the skateboard in the background, making sure his jacket was waterproof before the weatherman arrived.",
-            2: "During the earthquake and thunderstorm, the scarecrow fell over the wheelchair in the field where the grasshopper lived."
+            1: "The lighthouse keeper stood on his skateboard in the background, checking if his jacket was waterproof while the weatherman talked.",
+            2: "During the earthquake and thunderstorm, the scarecrow fell over the wheelchair in the field where the grasshopper lived.",
+            3: "The firefly lit up the backyard as the moonlight hit the sunflower, while a dragonfly zoomed over the birdhouse.",
+            4: "I saw a rainbow near the waterfall, then used a magnifying glass to look at the ladybug on the sidewalk by the spaceship.",
+            5: "The snowball hit the snowman in the playground where children used a jump-rope near the sandbox and seesaw.",
+            6: "After breakfast, the mailman checked the mailbox and saw a postcard from someone at the airport or shipyard.",
+            7: "He put on his raincoat and used a flashlight to find his backpack after the shipwreck near the coastline.",
+            8: "The butterfly landed on the windowsill while the woodcutter wore his earmuffs to chop wood for the fireplace.",
+            9: "In the bedroom, the moonlight hit the bookshelf and the lampshade, while he looked at a notebook near the cupboard.",
+            10: "The basketball player ate a strawberry and a cupcake before heading to the ballpark for the championship.",
+            11: "A jellyfish swam past the starfish and seaweed while the submarine moved through the saltwater.",
+            12: "The cowboy saw a rattlesnake near the campfire, then rode through the desert under the starlight.",
+            13: "He used a screwdriver and a hammer to fix the keyboard and the touchpad on his broken computer.",
+            14: "The grandmother wore her goldring while baking gingerbread and cheesecake for the weekend party.",
+            15: "I found a seashell near the sandcastle on the seashore, then put on my sunglasses to watch the sunrise.",
+            16: "The quarterback saw the scoreboard change as the touchdown happened during the big football game.",
+            17: "The toothfairy left a coin under the pillow after he used his toothbrush and toothpaste before bedtime.",
+            18: "The superhero saved the city from a landslide and a whirlwind, using his super strength in the moonlight.",
+            19: "The popcorn was salty, so he had a milkshake and a peppermint while watching a movie about a space station.",
+            20: "The honeybee flew to the honeycomb while the dragonfly danced above the waterlily in the middle of the afternoon."
         };
+
         const masterWordList = [
             { p: "Light", s: "house", m: "A tower guiding ships.", e: "The lighthouse cut through the fog." },
             { p: "Skate", s: "board", m: "A board with wheels.", e: "He rode his skateboard." },
@@ -57,66 +165,293 @@
             { p: "Thunder", s: "storm", m: "Rain with lightning.", e: "A thunderstorm is coming." },
             { p: "Scare", s: "crow", m: "Object to keep birds away.", e: "The scarecrow stood in the field." },
             { p: "Wheel", s: "chair", m: "Chair for mobility.", e: "He uses a wheelchair." },
-            { p: "Grass", s: "hopper", m: "A jumping insect.", e: "The grasshopper jumped away." }
+            { p: "Grass", s: "hopper", m: "A jumping insect.", e: "The grasshopper jumped away." },
+            { p: "Fire", s: "fly", m: "A glowing beetle.", e: "The firefly flickered in the dark." },
+            { p: "Back", s: "yard", m: "Area behind a house.", e: "We played catch in the backyard." },
+            { p: "Moon", s: "light", m: "Light from the moon.", e: "The lake sparkled in the moonlight." },
+            { p: "Sun", s: "flower", m: "A tall yellow flower.", e: "The sunflower turned toward the sun." },
+            { p: "Bird", s: "house", m: "A shelter for birds.", e: "A blue jay flew into the birdhouse." },
+            { p: "Rain", s: "bow", m: "Colorful arch in the sky.", e: "A rainbow appeared after the storm." },
+            { p: "Water", s: "fall", m: "River falling over a cliff.", e: "The waterfall was loud and misty." },
+            { p: "Lady", s: "bug", m: "A small red beetle.", e: "A ladybug landed on my arm." },
+            { p: "Side", s: "walk", m: "Path for people to walk.", e: "Don't run on the concrete sidewalk." },
+            { p: "Space", s: "ship", m: "Vehicle for space travel.", e: "The spaceship blasted off to Mars." },
+            { p: "Snow", s: "ball", m: "Ball made of snow.", e: "She threw a snowball at her brother." },
+            { p: "Snow", s: "man", m: "Human figure made of snow.", e: "We gave the snowman a carrot nose." },
+            { p: "Play", s: "ground", m: "Area for children to play.", e: "Meet me at the playground at noon." },
+            { p: "Sand", s: "box", m: "Box filled with sand.", e: "The toddler is playing in the sandbox." },
+            { p: "See", s: "saw", m: "A long plank for playing.", e: "Two kids went up and down on the seesaw." },
+            { p: "Break", s: "fast", m: "First meal of the day.", e: "I had eggs and toast for breakfast." },
+            { p: "Mail", s: "man", m: "Person who delivers mail.", e: "The mailman left a package today." },
+            { p: "Mail", s: "box", m: "Container for mail.", e: "Check the mailbox for letters." },
+            { p: "Air", s: "port", m: "Place where planes land.", e: "The airport was very busy." },
+            { p: "Post", s: "card", m: "Card for sending messages.", e: "She sent a postcard from Hawaii." },
+            { p: "Rain", s: "coat", m: "Waterproof coat.", e: "Wear your raincoat so you stay dry." },
+            { p: "Flash", s: "light", m: "Battery-powered light.", e: "He used a flashlight in the cave." },
+            { p: "Back", s: "pack", m: "Bag carried on the back.", e: "Put your books in your backpack." },
+            { p: "Ship", s: "wreck", m: "Remains of a sunken ship.", e: "Divers found the ancient shipwreck." },
+            { p: "Coast", s: "line", m: "Where land meets the sea.", e: "The coastline is very rocky here." },
+            { p: "Butter", s: "fly", m: "Insects with colorful wings.", e: "A butterfly emerged from the cocoon." },
+            { p: "Window", s: "sill", m: "Shelf at the bottom of a window.", e: "A cat sat on the sunny windowsill." },
+            { p: "Ear", s: "muffs", m: "Coverings to keep ears warm.", e: "Put on your earmuffs; it's freezing!" },
+            { p: "Wood", s: "cutter", m: "Person who chops wood.", e: "The woodcutter went into the forest." },
+            { p: "Fire", s: "place", m: "Place for a fire in a house.", e: "We roasted marshmallows by the fireplace." },
+            { p: "Bed", s: "room", m: "Room for sleeping.", e: "My bedroom has blue walls." },
+            { p: "Book", s: "shelf", m: "Shelf for holding books.", e: "The bookshelf is full of stories." },
+            { p: "Lamp", s: "shade", m: "Cover for a lamp.", e: "The lampstand has a flowery lampshade." },
+            { p: "Note", s: "book", m: "Book with blank pages.", e: "I wrote a poem in my notebook." },
+            { p: "Cup", s: "board", m: "Cabinet for dishes or food.", e: "The cereal is in the cupboard." },
+            { p: "Basket", s: "ball", m: "Game played with a hoop.", e: "He made a three-pointer in basketball." },
+            { p: "Straw", s: "berry", m: "Red fruit with seeds.", e: "A strawberry is sweet and juicy." },
+            { p: "Cup", s: "cake", m: "A small cake for one person.", e: "I ate a chocolate cupcake." },
+            { p: "Ball", s: "park", m: "A field for playing ball.", e: "We went to the ballpark to see a game." },
+            { p: "Champion", s: "ship", m: "The position of winner.", e: "They won the soccer championship." },
+            { p: "Jelly", s: "fish", m: "Sea creature with tentacles.", e: "Don't touch the jellyfish in the water." },
+            { p: "Star", s: "fish", m: "Star-shaped sea animal.", e: "I found a starfish on the beach." },
+            { p: "Sea", s: "weed", m: "Plants that grow in the sea.", e: "The seaweed washed up on the sand." },
+            { p: "Sub", s: "marine", m: "A ship that goes underwater.", e: "The submarine dove deep into the ocean." },
+            { p: "Salt", s: "water", m: "Water containing salt.", e: "The ocean is made of saltwater." },
+            { p: "Cow", s: "boy", m: "A man who herds cattle.", e: "The cowboy rode a brown horse." },
+            { p: "Rattle", s: "snake", m: "Snake with a rattling tail.", e: "We heard the rattlesnake in the grass." },
+            { p: "Camp", s: "fire", m: "Fire built while camping.", e: "We told stories around the campfire." },
+            { p: "Star", s: "light", m: "Light from the stars.", e: "The desert was quiet under the starlight." },
+            { p: "Dragon", s: "fly", m: "Insect with long wings.", e: "A blue dragonfly hovered over the pond." },
+            { p: "Screw", s: "driver", m: "Tool for turning screws.", e: "He used a screwdriver to fix the toy." },
+            { p: "Hammer", s: "head", m: "Part of a hammer used to hit.", e: "Be careful not to hit your thumb." },
+            { p: "Key", s: "board", m: "Set of keys for typing.", e: "The keyboard is missing a letter." },
+            { p: "Touch", s: "pad", m: "Sensitive area on a laptop.", e: "Use the touchpad to move the cursor." },
+            { p: "Finger", s: "print", m: "Mark made by a finger.", e: "A fingerprint was left on the glass." },
+            { p: "Grand", s: "mother", m: "The mother of your parent.", e: "My grandmother makes the best cookies." },
+            { p: "Gold", s: "ring", m: "A ring made of gold.", e: "She wore a shiny goldring on her hand." },
+            { p: "Ginger", s: "bread", m: "Cake flavored with ginger.", e: "We built a gingerbread house." },
+            { p: "Cheese", s: "cake", m: "Cake made with cream cheese.", e: "I had a slice of blueberry cheesecake." },
+            { p: "Week", s: "end", m: "Saturday and Sunday.", e: "I'm going to the park this weekend." },
+            { p: "Sea", s: "shell", m: "Shell of a sea creature.", e: "I found a spiral seashell." },
+            { p: "Sand", s: "castle", m: "Castle made of sand.", e: "The tide washed away my sandcastle." },
+            { p: "Sea", s: "shore", m: "The land along the sea.", e: "We walked along the seashore at sunset." },
+            { p: "Sun", s: "glasses", m: "Glasses to protect eyes.", e: "Put on your sunglasses; it's bright." },
+            { p: "Sun", s: "rise", m: "When the sun comes up.", e: "The sunrise turned the sky pink." },
+            { p: "Quarter", s: "back", m: "Player who leads the offense.", e: "The quarterback threw a long pass." },
+            { p: "Score", s: "board", m: "Board showing the score.", e: "Look at the scoreboard to see who's winning." },
+            { p: "Touch", s: "down", m: "A score in football.", e: "The team scored a touchdown!" },
+            { p: "Foot", s: "ball", m: "A sport played with a ball.", e: "We played football in the park." },
+            { p: "Goal", s: "keeper", m: "Player who guards the goal.", e: "The goalkeeper blocked the shot." },
+            { p: "Tooth", s: "fairy", m: "Fairy that collects teeth.", e: "The toothfairy visited last night." },
+            { p: "Tooth", s: "brush", m: "Brush for cleaning teeth.", e: "Use your toothbrush twice a day." },
+            { p: "Tooth", s: "paste", m: "Cream for cleaning teeth.", e: "Squeeze some toothpaste onto the brush." },
+            { p: "Bed", s: "time", m: "Time to go to sleep.", e: "Bedtime is at 8 o'clock." },
+            { p: "Day", s: "dream", m: "Dreaming while awake.", e: "I had a daydream about flying." },
+            { p: "Super", s: "hero", m: "Person with special powers.", e: "Batman is my favorite superhero." },
+            { p: "Land", s: "slide", m: "Falling of earth or rock.", e: "The road was closed due to a landslide." },
+            { p: "Whirl", s: "wind", m: "A spinning wind.", e: "The whirlwind blew the leaves away." },
+            { p: "Moon", s: "beam", m: "A ray of moonlight.", e: "A moonbeam lit up the room." },
+            { p: "Sun", s: "beam", m: "A ray of sunlight.", e: "A sunbeam came through the window." },
+            { p: "Pop", s: "corn", m: "Corn that has popped.", e: "We ate popcorn at the movies." },
+            { p: "Milk", s: "shake", m: "A cold milk drink.", e: "I want a chocolate milkshake." },
+            { p: "Pepper", s: "mint", m: "A minty candy.", e: "I had a refreshing peppermint." },
+            { p: "Space", s: "station", m: "Structure in space.", e: "Astronauts live on the space station." },
+            { p: "Life", s: "boat", m: "Small boat for emergencies.", e: "Every ship must have a lifeboat." },
+            { p: "Honey", s: "bee", m: "Bee that makes honey.", e: "The honeybee buzzed around the flower." },
+            { p: "Honey", s: "comb", m: "Wax structure for honey.", e: "The honeycomb was full of sweet honey." },
+            { p: "After", s: "noon", m: "Part of day after 12pm.", e: "We went swimming in the afternoon." },
+            { p: "Water", s: "lily", m: "Plant that grows in water.", e: "A frog sat on the waterlily." },
+            { p: "Butter", s: "milk", m: "Liquid left after making butter.", e: "She used buttermilk to make pancakes." }
         ];
 
-        let currentLevel = 1, score = 0, completedInLevel = 0, selectedPrefix = null;
+        let shuffledWordList = [];
+        let currentLevel = 1;
+        let score = 0;
+        let completedInLevel = 0;
+        let selectedPrefix = null;
+        let triesForCurrentWord = 0;
+        let wrongWords = [];
+        let isProcessing = false;
+        const totalLevels = 20;
+
+        // Shuffle logic for start of game
+        function shuffleAllWords() {
+            shuffledWordList = [...masterWordList].sort(() => Math.random() - 0.5);
+        }
 
         function loadLevel(lvl) {
             completedInLevel = 0;
+            isProcessing = false;
             document.getElementById('meaning-box').style.opacity = '0';
+            
             const startIdx = (lvl - 1) * 5;
-            const words = masterWordList.slice(startIdx, startIdx + 5);
+            const words = shuffledWordList.slice(startIdx, startIdx + 5);
+            
+            if (words.length === 0 || lvl > totalLevels) {
+                showEndGameSummary();
+                return;
+            }
+
+            // Shuffle position of words in columns for extra randomness
             renderColumn('left-col', [...words].sort(() => Math.random() - 0.5), 'prefix');
             renderColumn('right-col', [...words].sort(() => Math.random() - 0.5), 'suffix');
             updateUI();
         }
 
         function renderColumn(id, list, type) {
-            const col = document.getElementById(id); col.innerHTML = '';
+            const col = document.getElementById(id);
+            col.innerHTML = '';
             list.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'word-btn bg-slate-800 border-2 border-slate-700 rounded-xl shadow-md';
+                div.className = 'word-btn bg-slate-800 border-2 border-slate-700 shadow-md hover:border-indigo-400 transition-all';
                 div.textContent = type === 'prefix' ? item.p : item.s;
                 div.dataset.pairId = item.p + item.s;
                 div.onclick = () => {
+                    if (isProcessing || div.classList.contains('correct-anim') || div.classList.contains('wrong-reveal')) return;
+                    
                     if (type === 'prefix') {
                         if (selectedPrefix) selectedPrefix.classList.remove('selected');
-                        selectedPrefix = div; div.classList.add('selected');
+                        selectedPrefix = div;
+                        div.classList.add('selected');
                     } else if (selectedPrefix) {
-                        if (selectedPrefix.dataset.pairId === div.dataset.pairId) {
-                            score += 100; handleSuccess(selectedPrefix, div, item);
-                        } else {
-                            selectedPrefix.classList.remove('selected'); selectedPrefix = null;
-                        }
+                        checkMatch(div);
                     }
                 };
                 col.appendChild(div);
             });
         }
 
-        function handleSuccess(pre, suf, word) {
-            pre.classList.add('correct-anim'); suf.classList.add('correct-anim');
-            const box = document.getElementById('meaning-box'); box.style.opacity = '1';
+        function checkMatch(sufDiv) {
+            const pairId = selectedPrefix.dataset.pairId;
+            const matchId = sufDiv.dataset.pairId;
+
+            if (pairId === matchId) {
+                let points = 100;
+                if (triesForCurrentWord === 1) points = 50;
+                if (triesForCurrentWord >= 2) points = 20;
+                
+                score += points;
+                handleMatchSuccess(selectedPrefix, sufDiv, pairId);
+            } else {
+                triesForCurrentWord++;
+                selectedPrefix.classList.remove('selected');
+                
+                if (triesForCurrentWord >= 3) {
+                    const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
+                    if (!wrongWords.some(w => w.p + w.s === pairId)) {
+                        wrongWords.push(wordObj);
+                    }
+                    revealCorrectAnswer(pairId);
+                } else {
+                    selectedPrefix.classList.add('shake');
+                    sufDiv.classList.add('shake');
+                    isProcessing = true;
+                    setTimeout(() => {
+                        selectedPrefix.classList.remove('shake');
+                        sufDiv.classList.remove('shake');
+                        selectedPrefix = null;
+                        isProcessing = false;
+                        updateUI();
+                    }, 400);
+                }
+            }
+        }
+
+        function handleMatchSuccess(pre, suf, pairId) {
+            isProcessing = true;
+            pre.classList.add('correct-anim');
+            suf.classList.add('correct-anim');
+            
+            const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
+            showWordMeaning(wordObj);
+            
+            setTimeout(() => {
+                finishWordRound();
+            }, 400);
+        }
+
+        function revealCorrectAnswer(pairId) {
+            isProcessing = true;
+            const pre = document.querySelector(`#left-col [data-pair-id="${pairId}"]`);
+            const suf = document.querySelector(`#right-col [data-pair-id="${pairId}"]`);
+            
+            pre.classList.add('wrong-reveal');
+            suf.classList.add('wrong-reveal');
+            
+            const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
+            showWordMeaning(wordObj);
+            
+            setTimeout(() => {
+                finishWordRound();
+            }, 1000);
+        }
+
+        function showWordMeaning(word) {
+            const box = document.getElementById('meaning-box');
+            box.style.opacity = '1';
             document.getElementById('word-title').textContent = word.p + word.s;
             document.getElementById('word-meaning').textContent = word.m;
             document.getElementById('word-example').textContent = "Example: " + word.e;
-            completedInLevel++; selectedPrefix = null;
-            if (completedInLevel === 5) document.getElementById('overlay').classList.remove('hidden');
+        }
+
+        function finishWordRound() {
+            completedInLevel++;
+            selectedPrefix = null;
+            triesForCurrentWord = 0;
+            isProcessing = false;
+            
+            if (completedInLevel === 5) {
+                document.getElementById('completed-lvl').textContent = currentLevel;
+                if (currentLevel === totalLevels) {
+                    document.getElementById('next-level-btn').textContent = "Show Final Score 🏆";
+                }
+                document.getElementById('overlay').classList.remove('hidden');
+            }
             updateUI();
         }
 
         function updateUI() {
-            document.getElementById('level-display').textContent = currentLevel + "/20";
+            document.getElementById('level-display').textContent = currentLevel + "/" + totalLevels;
             document.getElementById('score-display').textContent = score;
+            document.getElementById('tries-display').textContent = `Tries: ${triesForCurrentWord}/3`;
             document.getElementById('progress-bar').style.width = (completedInLevel / 5 * 100) + '%';
         }
 
-        function showLevelStory() { document.getElementById('story-content').textContent = levelStories[currentLevel] || "Unlock level to read!"; document.getElementById('story-modal').classList.remove('hidden'); }
-        function closeStoryModal() { document.getElementById('story-modal').classList.add('hidden'); }
-        function startNextLevel() { document.getElementById('overlay').classList.add('hidden'); currentLevel++; loadLevel(currentLevel); }
+        function showEndGameSummary() {
+            const modal = document.getElementById('endgame-modal');
+            const list = document.getElementById('wrong-words-list');
+            document.getElementById('final-score-display').textContent = `Final Score: ${score} Points`;
+            
+            list.innerHTML = '';
+            if (wrongWords.length === 0) {
+                list.innerHTML = '<p class="text-green-400 text-sm">Perfect! No mistakes!</p>';
+            } else {
+                wrongWords.forEach(w => {
+                    const item = document.createElement('div');
+                    item.className = 'bg-slate-700/50 p-2 rounded-lg text-sm border-l-4 border-yellow-500';
+                    item.innerHTML = `<span class="font-bold text-yellow-400">${w.p}${w.s}:</span> ${w.m}`;
+                    list.appendChild(item);
+                });
+            }
+            modal.classList.remove('hidden');
+        }
 
-        window.onload = () => loadLevel(1);
+        function showLevelStory() {
+            // Note: Story is now "Level X" specific but word order is randomized.
+            document.getElementById('story-content').textContent = levelStories[currentLevel] || "Master this level to see the story!";
+            document.getElementById('story-modal').classList.remove('hidden');
+        }
+        
+        function closeStoryModal() { document.getElementById('story-modal').classList.add('hidden'); }
+        
+        function startNextLevel() { 
+            document.getElementById('overlay').classList.add('hidden'); 
+            if (currentLevel >= totalLevels) {
+                showEndGameSummary();
+            } else {
+                currentLevel++; 
+                loadLevel(currentLevel); 
+            }
+        }
+
+        window.onload = () => {
+            shuffleAllWords(); // Fully randomize the deck
+            loadLevel(1);
+        };
     </script>
 </body>
 </html>

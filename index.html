@@ -33,22 +33,11 @@
             transform: scale(1.05); 
             box-shadow: 0 0 15px rgba(79, 70, 229, 0.6);
         }
-        .correct-anim { 
-            background-color: #166534 !important; 
-            border-color: #22c55e !important; 
-            opacity: 0.8; 
-            animation: pulse 0.4s ease-in-out;
-        }
         .shake { animation: shake 0.4s; }
         @keyframes shake { 
             0%, 100% { transform: translateX(0); } 
             25% { transform: translateX(-8px); border-color: #ef4444; } 
             75% { transform: translateX(8px); border-color: #ef4444; } 
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
         }
         .bubble {
             position: absolute;
@@ -77,20 +66,6 @@
             from { transform: scale(1); }
             to { transform: scale(1.1); }
         }
-        .bucket {
-            position: absolute;
-            bottom: 20px;
-            width: 120px;
-            height: 60px;
-            background: #4f46e5;
-            border-radius: 0 0 20px 20px;
-            border: 4px solid #818cf8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: black;
-            z-index: 10;
-        }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
@@ -113,7 +88,7 @@
 
     <!-- Mode & Progress -->
     <div class="w-full max-w-md flex justify-between items-center px-2 mb-2">
-        <span id="mode-display" class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">BUBBLE MODE</span>
+        <span id="mode-display" class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">LOADING...</span>
         <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
             <div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all duration-300"></div>
         </div>
@@ -125,17 +100,20 @@
 
     <!-- Main Game Viewport -->
     <div id="game-viewport" class="relative w-full max-w-md bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden min-h-[450px]">
+        <!-- Match Mode -->
         <div id="match-container" class="grid grid-cols-2 gap-4 p-4 hidden">
             <div id="left-col" class="flex flex-col gap-3"></div>
             <div id="right-col" class="flex flex-col gap-3"></div>
         </div>
-        <div id="catch-container" class="absolute inset-0 hidden">
-            <div id="catch-arena" class="relative w-full h-full"></div>
-        </div>
+        
+        <!-- Bubble Mode -->
         <div id="bubble-container" class="absolute inset-0 hidden flex flex-col">
-            <div id="bubble-found-list" class="bg-indigo-900/40 p-2 flex gap-2 overflow-x-auto border-b border-indigo-500/20 min-h-[44px]"></div>
+            <div id="bubble-found-list" class="bg-indigo-900/40 p-2 flex flex-wrap gap-1.5 justify-center border-b border-indigo-500/20 min-h-[50px]"></div>
             <div id="bubble-arena" class="relative flex-grow"></div>
         </div>
+
+        <!-- Placeholder for Catch Mode if implemented later or just a placeholder for logic extension -->
+        <div id="catch-container" class="absolute inset-0 hidden flex items-center justify-center text-slate-500 italic">Catch Mode Placeholder</div>
     </div>
 
     <!-- Feedback Box -->
@@ -173,12 +151,8 @@
     </div>
 
     <script>
-        // --- DATA ---
         const rawCSVData = `DO,NATION\nSLIT,HER\nCAR,GO\nCOMB,AT\nFOR,MAT\nFOR,BID\nRAM,PAGE\nHIGH,BALL\nHAND,SOME\nAN,OTHER\nPOWER,LESS\nCENT,RALLY\nCAN,ON\nAIR,LINE\nCAR,PET\nTAR,GET\nFOR,TUNE\nPART,RIDGE\nCART,RIDGE\nKNOW,LEDGE\nOUT,LET\nACT,OR\nFORE,CAST\nOR,DEAL\nTRIP,LET\nFACT,OR\nTURN,COAT\nWATER,FALL\nSO,LID\nSEED,LING\nEAR,WIG\nAS,CENT\nPAGE,ANT\nSTIR,RING\nAT,TACK\nIN,SCRIBE\nBUTTER,CUP\nSAT,URN\nPASS,AGE\nJUST,ICE\nUP,HOLD\nAM,BUSH\nWAG,ON\nOUT,PUT\nBAND,IT\nTO,WING\nDEAD,LOCK\nRAN,SACK\nPORT,ABLE\nNO,VICE\nFEAT,HER\nHEAT,HER\nHUM,AN\nCOT,TON\nSNAP,PING\nBAR,GAIN\nFUR,ROW\nCAB,IN\nPUFF,IN\nRAIL,WAY\nBAR,ROW\nDAM,AGE\nA,VOID\nA,WAY\nTRAP,DOOR\nWEEK,END\nNOT,ICE\nCART,ON\nBE,AT\nME,AN\nBE,HIND\nTAB,LET\nBAT,ON\nBUT,TON\nMAN,AGE\nCAR,CASE\nCAP,ABLE\nQUEST,ION\nBIRTH,DAY\nFOR,GET\nCAR,ROT\nIN,CREASE\nMAY,OR\nPULL,OVER\nOR,BIT\nPRIM,ROSE\nNAP,KIN\nAS,KING\nFORT,NIGHT\nBIT,TEN\nFRIEND,SHIP\nREST,LESS\nHER,ON\nBAND,AGE\nFOR,WARD\nIS,LAND\nROT,TEN\nOVER,WEIGHT\nPOST,AGE\nADAPT,ABLE\nKEY,BOARD\nCARE,TAKER\nCUP,BOARD\nEYE,BALL\nREST,RAIN\nMAN,HOLE\nOVER,ACT\nSIDE,BOARD\nCOPY,RIGHT\nNO,BODY\nNOW,HERE\nRUN,AWAY\nOFF,SPRING\nOUT,LAW\nUNDER,GROWTH\nSOME,ONE\nWHAT,EVER\nUNDER,TAKE\nOVER,COAT\nSUN,BURN\nUP,ON\nOUT,BURST\nVIEW,POINT\nSTY,LED\nEVER,GREEN\nDATA,BASE\nDOWN,LOAD\nBROAD,BAND\nOVER,DUE\nPASS,PORT\nPIN,STRIPE\nYOUR,SELF\nWE,ATHER\nHEAD,LAND\nHEART,ACHE\nHOME,MADE\nHEART,BEAT\nHONEY,COMB\nBOOK,MARK\nFIRE,PLACE\nWATER,FALL\nBUTTER,FLY\nARM,CHAIR\nAFTER,NOON\nBATH,ROOM\nBACK,BONE\nBACK,GROUND\nBACK,WARD\nBED,TIME\nBLUE,BELL\nBOOK,CASE\nCAMP,FIRE\nCANDLE,STICK\nDISH,WASHER\nDOG,HOUSE\nDOWN,STAIRS\nDRAGON,FLY\nDRESS,MAKER\nEAR,RING\nEVERY,BODY\nEVERY,THING\nFARM,HOUSE\nFOOT,BALL\nFOOT,PRINT\nGOLD,FISH\nGRAND,FATHER\nGRAND,MOTHER\nGRASS,HOPPER\nGROUND,WORK\nHAIR,CUT\nHAND,BAG\nHAND,WRITING\nHEAD,ACHE\nHEAD,LIGHT\nHOME,WORK\nHORSE,BACK\nHOUSE,HOLD\nHOUSE,WORK\nIN,SIDE\nJELLY,FISH\nLADY,BIRD\nLIFE,BOAT\nLIGHT,HOUSE\nLIP,STICK\nMID,NIGHT\nMOTOR,WAY\nNAME,PLATE\nNEWS,PAPER\nNIGHT,MARE\nOUT,SIDE\nOVER,TAKE\nPAN,CAKE\nPAPER,BACK\nPLAY,GROUND\nPOLICE,MAN\nPOST,MAN\nRAIN,BOW\nRAIN,COAT\nRIVER,SIDE\nROAD,SIDE\nSAIL,BOAT\nSAND,CASTLE\nSCARE,CROW\nSCHOOL,BOY\nSCHOOL,GIRL\nSEA,SIDE\nSHIP,WRECK\nSHOP,KEEPER\nSKATE,BOARD\nSNOW,BALL\nSNOW,MAN\nSOME,BODY\nSOMETIMES\nSOMEWHERE\nSOUND,PROOF\nSPACE,SHIP\nSTAIR,CASE\nSTAR,FISH\nSTEAM,BOAT\nSUN,FLOWER\nSUN,GLASSES\nSUN,LIGHT\nSUN,SET\nSUN,SHINE\nTABLE,CLOTH\nTABLE,SPOON\nTEA,POT\nTHUNDER,STORM\nTIME,TABLE\nTOOTH,BRUSH\nTOOTH,PASTE\nUP,STAIRS\nWALL,PAPER\nWASH,ROOM\nWATCH,MAN\nWATER,COLOR\nWATER,PROOF\nWHEEL,CHAIR\nWOOD,LAND`;
 
-        const staticDictionary = { "DONATION": "Something given to a cause.", "SLITHER": "Moving like a snake.", "CARGO": "Goods on a ship." };
-
-        // --- SOUND ENGINE ---
         const AudioEngine = {
             ctx: null, streak: 0, consecutiveErrors: 0,
             init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
@@ -202,50 +176,110 @@
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(); osc.stop(this.ctx.currentTime + duration);
             },
-            correct() {
-                this.consecutiveErrors = 0; this.streak++;
-                const vol = this.getVolume(0.15);
-                this.playNote(523.25, 'triangle', 0.15, vol);
-                setTimeout(() => this.playNote(659.25, 'triangle', 0.25, vol), 80);
-            },
-            wrong() {
-                this.streak = 0; this.consecutiveErrors++;
-                this.playNote(110, 'sine', 0.3, this.getVolume(0.1));
-            },
+            correct() { this.consecutiveErrors = 0; this.streak++; const vol = this.getVolume(0.15); this.playNote(523.25, 'triangle', 0.15, vol); setTimeout(() => this.playNote(659.25, 'triangle', 0.25, vol), 80); },
+            wrong() { this.streak = 0; this.consecutiveErrors++; this.playNote(110, 'sine', 0.3, this.getVolume(0.1)); },
             pop() { this.playNote(800, 'sine', 0.05, this.getVolume(0.1)); },
-            levelComplete() {
-                const vol = this.getVolume(0.2);
-                [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.playNote(f, 'square', 0.3, vol), i * 150));
-            },
+            levelComplete() { const vol = this.getVolume(0.2); [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.playNote(f, 'square', 0.3, vol), i * 150)); },
             tap() { this.playNote(400, 'triangle', 0.05, this.getVolume(0.05)); }
         };
 
-        // --- GAME LOGIC ---
         let masterWordList = [];
         let currentLevel = 1;
         let score = 0;
         let levelWords = [];
         let isProcessing = false;
+        let gameModeSequence = ['BUBBLE', 'MATCH']; // We can add 'CATCH' here later
 
         function processCSV() {
             const lines = rawCSVData.split('\n');
             masterWordList = lines.map(line => {
                 const [p, s] = line.split(',');
-                return { p, s, full: p + s, m: staticDictionary[p+s] || "A compound word." };
+                return { p, s, full: p + s, m: "A compound word." };
             });
-            
-            // SHUFFLE the master list so the game order is different every restart
             masterWordList.sort(() => Math.random() - 0.5);
+            // Randomize starting sequence at session start
+            gameModeSequence.sort(() => Math.random() - 0.5);
         }
 
         function setupLevel() {
-            // Words are taken from the shuffled master list based on current level
             const startIdx = (currentLevel - 1) * 5 % masterWordList.length;
             levelWords = masterWordList.slice(startIdx, startIdx + 5);
             document.getElementById('level-display').textContent = currentLevel;
             document.getElementById('meaning-box').style.opacity = '0';
             document.getElementById('progress-bar').style.width = '0%';
-            initBubbleMode();
+            
+            // Determine mode from sequence
+            const modeIndex = (currentLevel - 1) % gameModeSequence.length;
+            const currentMode = gameModeSequence[modeIndex];
+            
+            document.getElementById('mode-display').textContent = currentMode + " MODE";
+            
+            // Hide all containers
+            document.getElementById('match-container').classList.add('hidden');
+            document.getElementById('bubble-container').classList.add('hidden');
+            
+            if (currentMode === 'BUBBLE') initBubbleMode();
+            else if (currentMode === 'MATCH') initMatchMode();
+        }
+
+        function initMatchMode() {
+            const matchContainer = document.getElementById('match-container');
+            const leftCol = document.getElementById('left-col');
+            const rightCol = document.getElementById('right-col');
+            matchContainer.classList.remove('hidden');
+            leftCol.innerHTML = ''; rightCol.innerHTML = '';
+            
+            let matchCount = 0;
+            let selectedPre = null;
+
+            const prefixes = [...levelWords].sort(() => Math.random() - 0.5);
+            const suffixes = [...levelWords].sort(() => Math.random() - 0.5);
+
+            prefixes.forEach(w => {
+                const btn = document.createElement('div');
+                btn.className = 'word-btn bg-slate-800 border-2 border-slate-700';
+                btn.textContent = w.p;
+                btn.onclick = () => {
+                    if (btn.classList.contains('bg-green-600') || isProcessing) return;
+                    AudioEngine.tap();
+                    if (selectedPre) selectedPre.classList.remove('selected');
+                    selectedPre = btn;
+                    btn.classList.add('selected');
+                };
+                leftCol.appendChild(btn);
+                btn.dataset.id = w.full;
+            });
+
+            suffixes.forEach(w => {
+                const btn = document.createElement('div');
+                btn.className = 'word-btn bg-slate-800 border-2 border-slate-700';
+                btn.textContent = w.s;
+                btn.onclick = () => {
+                    if (btn.classList.contains('bg-green-600') || !selectedPre || isProcessing) return;
+                    if (selectedPre.dataset.id === w.full) {
+                        isProcessing = true;
+                        AudioEngine.correct();
+                        btn.classList.add('bg-green-600', 'border-green-400');
+                        selectedPre.classList.remove('selected');
+                        selectedPre.classList.add('bg-green-600', 'border-green-400');
+                        score += 100; matchCount++;
+                        showWordMeaning(w);
+                        setTimeout(() => {
+                            checkLevelComplete(matchCount, 5);
+                            isProcessing = false;
+                        }, 500);
+                        selectedPre = null;
+                    } else {
+                        AudioEngine.wrong();
+                        btn.classList.add('shake');
+                        setTimeout(() => btn.classList.remove('shake'), 400);
+                        selectedPre.classList.remove('selected');
+                        selectedPre = null;
+                    }
+                    updateUI();
+                };
+                rightCol.appendChild(btn);
+            });
         }
 
         function initBubbleMode() {
@@ -273,54 +307,31 @@
                 
                 b.onclick = () => {
                     if (b.classList.contains('opacity-0') || isProcessing) return;
-                    
                     if (!firstBubble) {
-                        // ENFORCE ORDER: Must be a prefix to start
-                        if (p.type !== 'prefix') {
-                            AudioEngine.wrong();
-                            b.classList.add('shake');
-                            setTimeout(() => b.classList.remove('shake'), 400);
-                            return; 
-                        }
+                        if (p.type !== 'prefix') { AudioEngine.wrong(); b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400); return; }
                         AudioEngine.tap();
                         firstBubble = { el: b, id: p.id };
                         b.classList.add('active-selection', 'bg-indigo-600');
                     } else if (firstBubble.el === b) {
-                        firstBubble = null;
-                        b.classList.remove('active-selection', 'bg-indigo-600');
+                        firstBubble = null; b.classList.remove('active-selection', 'bg-indigo-600');
                     } else {
-                        // Attempting match
                         if (firstBubble.id === p.id && p.type === 'suffix') {
                             isProcessing = true;
                             AudioEngine.pop(); AudioEngine.correct();
                             b.classList.add('opacity-0', 'scale-150');
                             firstBubble.el.classList.add('opacity-0', 'scale-150');
-                            
                             const tag = document.createElement('span');
-                            tag.className = 'bg-green-600 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap';
+                            tag.className = 'bg-green-600 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shadow-sm border border-green-400/30';
                             tag.textContent = p.id;
                             foundList.appendChild(tag);
-                            
-                            // Scroll to the end of the found list so the new word is visible
-                            foundList.scrollLeft = foundList.scrollWidth;
-
                             score += 100; bubbleMatches++;
                             showWordMeaning(levelWords.find(w => w.full === p.id));
-                            
-                            // Delayed completion check to ensure the UI updates before the overlay
-                            setTimeout(() => {
-                                checkLevelComplete(bubbleMatches, 5);
-                                isProcessing = false;
-                            }, 500);
+                            setTimeout(() => { checkLevelComplete(bubbleMatches, 5); isProcessing = false; }, 500);
                         } else {
-                            // Incorrect match OR wrong order (clicked another prefix second)
-                            AudioEngine.wrong();
-                            firstBubble.el.classList.remove('active-selection', 'bg-indigo-600');
-                            b.classList.add('shake');
-                            setTimeout(() => b.classList.remove('shake'), 400);
+                            AudioEngine.wrong(); firstBubble.el.classList.remove('active-selection', 'bg-indigo-600');
+                            b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 400);
                         }
-                        firstBubble = null;
-                        updateUI();
+                        firstBubble = null; updateUI();
                     }
                 };
                 arena.appendChild(b);
@@ -342,7 +353,7 @@
             const box = document.getElementById('meaning-box');
             box.style.opacity = '1';
             document.getElementById('word-title').textContent = word.full;
-            document.getElementById('word-meaning').textContent = word.m;
+            document.getElementById('word-meaning').textContent = "A compound word formed from " + word.p + " and " + word.s + ".";
         }
 
         function startNextLevel() {

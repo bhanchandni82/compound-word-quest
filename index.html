@@ -233,9 +233,13 @@
                 const [p, s] = line.split(',');
                 return { p, s, full: p + s, m: staticDictionary[p+s] || "A compound word." };
             });
+            
+            // SHUFFLE the master list so the game order is different every restart
+            masterWordList.sort(() => Math.random() - 0.5);
         }
 
         function setupLevel() {
+            // Words are taken from the shuffled master list based on current level
             const startIdx = (currentLevel - 1) * 5 % masterWordList.length;
             levelWords = masterWordList.slice(startIdx, startIdx + 5);
             document.getElementById('level-display').textContent = currentLevel;

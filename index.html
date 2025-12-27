@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compound Quest: CSV Edition</title>
+    <title>Compound Quest: Evolution</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
@@ -23,7 +23,7 @@
             min-height: 60px; 
             text-align: center; 
             padding: 8px; 
-            font-weight: bold;
+            font-weight: bold; 
             border-radius: 1rem;
             text-transform: uppercase;
         }
@@ -37,13 +37,7 @@
             background-color: #166534 !important; 
             border-color: #22c55e !important; 
             opacity: 0.8; 
-            cursor: default; 
             animation: pulse 0.4s ease-in-out;
-        }
-        .wrong-reveal {
-            background-color: #92400e !important;
-            border-color: #f59e0b !important;
-            opacity: 0.9;
         }
         .shake { animation: shake 0.4s; }
         @keyframes shake { 
@@ -56,11 +50,52 @@
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s, scale 0.3s;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.3);
+            border: 4px solid rgba(255,255,255,0.2);
+            font-size: 0.85rem;
+            padding: 12px;
+            text-align: center;
+            word-break: break-word;
+            touch-action: none;
+            z-index: 20;
+            user-select: none;
+        }
+        .bubble.active-selection {
+            animation: bubblePulse 1s infinite alternate;
+            border-color: #fbbf24;
+            box-shadow: 0 0 20px #fbbf24;
+        }
+        @keyframes bubblePulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        .bucket {
+            position: absolute;
+            bottom: 20px;
+            width: 120px;
+            height: 60px;
+            background: #4f46e5;
+            border-radius: 0 0 20px 20px;
+            border: 4px solid #818cf8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: black;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="flex flex-col items-center p-4 min-h-screen">
     <!-- Top Stats Bar -->
-    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl">
+    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-xl relative">
         <div class="text-center">
             <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Level</span>
             <span id="level-display" class="text-xl font-black text-indigo-400">1/-</span>
@@ -69,765 +104,245 @@
             <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest">Score</span>
             <span id="score-display" class="text-xl font-black text-yellow-400">0</span>
         </div>
-        <div class="text-right">
-            <span id="tries-display" class="text-[10px] text-red-400 block font-bold uppercase">Tries: 0/3</span>
-            <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden mt-1">
-                <div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all duration-300"></div>
-            </div>
+        <div class="flex items-center gap-3">
+             <button onclick="toggleSettings()" class="bg-slate-700 p-2 rounded-lg text-slate-300 hover:bg-slate-600 transition-colors">
+                ⚙️
+            </button>
         </div>
     </div>
 
-    <div class="w-full max-w-md flex gap-2 mb-4">
-        <div class="flex-1 py-3 bg-slate-700/50 rounded-xl text-center text-xs font-bold text-slate-400 italic">Match the Parts!</div>
-        <button onclick="showEndGameSummary()" class="px-4 py-3 bg-red-900/40 hover:bg-red-800/60 border border-red-500/30 rounded-xl text-sm font-bold text-red-200 transition-colors">🏁 Finish</button>
+    <!-- Mode & Progress -->
+    <div class="w-full max-w-md flex justify-between items-center px-2 mb-2">
+        <span id="mode-display" class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">BUBBLE MODE</span>
+        <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all duration-300"></div>
+        </div>
     </div>
 
-    <!-- Game Grid -->
-    <div id="game-container" class="w-full max-w-md grid grid-cols-2 gap-4">
-        <div id="left-col" class="flex flex-col gap-3"></div>
-        <div id="right-col" class="flex flex-col gap-3"></div>
+    <div id="instruction-bar" class="w-full max-w-md py-3 mb-4 bg-slate-700/50 rounded-xl text-center text-xs font-bold text-slate-300 italic">
+        Select the FIRST part of a word to begin!
+    </div>
+
+    <!-- Main Game Viewport -->
+    <div id="game-viewport" class="relative w-full max-w-md bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden min-h-[450px]">
+        <div id="match-container" class="grid grid-cols-2 gap-4 p-4 hidden">
+            <div id="left-col" class="flex flex-col gap-3"></div>
+            <div id="right-col" class="flex flex-col gap-3"></div>
+        </div>
+        <div id="catch-container" class="absolute inset-0 hidden">
+            <div id="catch-arena" class="relative w-full h-full"></div>
+        </div>
+        <div id="bubble-container" class="absolute inset-0 hidden flex flex-col">
+            <div id="bubble-found-list" class="bg-indigo-900/40 p-2 flex gap-2 overflow-x-auto border-b border-indigo-500/20 min-h-[44px]"></div>
+            <div id="bubble-arena" class="relative flex-grow"></div>
+        </div>
     </div>
 
     <!-- Feedback Box -->
     <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-2xl opacity-0 transition-all duration-200 text-center shadow-lg">
         <p id="word-title" class="text-indigo-300 font-bold uppercase text-sm mb-1 tracking-widest"></p>
-        <p id="word-meaning" class="text-slate-200 text-sm italic mb-2"></p>
+        <p id="word-meaning" class="text-slate-200 text-sm italic"></p>
     </div>
 
-    <!-- Level Complete Overlay -->
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/80 hidden z-[60] flex items-center justify-center p-6">
+        <div class="bg-slate-800 p-6 rounded-3xl w-full max-w-xs border border-slate-700">
+            <h3 class="text-xl font-bold mb-4 text-center">Settings</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span>Mute Sounds</span>
+                    <input type="checkbox" id="mute-toggle" class="w-6 h-6">
+                </div>
+                <div class="flex justify-between items-center">
+                    <span>Calm Mode</span>
+                    <input type="checkbox" id="calm-toggle" class="w-6 h-6">
+                </div>
+                <button onclick="toggleSettings()" class="w-full bg-indigo-600 py-3 rounded-xl font-bold mt-4">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlays -->
     <div id="overlay" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-50 p-6">
         <div class="bg-slate-800 p-8 rounded-3xl text-center max-w-xs w-full border border-indigo-500/30 shadow-2xl">
             <div class="text-6xl mb-4">🌟</div>
             <h2 class="text-2xl font-black mb-2 text-white">Awesome!</h2>
             <p class="text-slate-400 mb-6">Level <span id="completed-lvl">1</span> Complete!</p>
-            <button id="next-level-btn" onclick="startNextLevel()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95">Next Level 🚀</button>
-        </div>
-    </div>
-
-    <!-- End Game Summary Modal -->
-    <div id="endgame-modal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center hidden z-[100] p-6">
-        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full border border-yellow-500/30 shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="text-5xl text-center mb-2">🏆</div>
-            <h2 class="text-2xl font-black text-center text-yellow-400 mb-1">Quest Complete!</h2>
-            <p id="final-score-display" class="text-center text-white font-bold mb-4 text-xl"></p>
-            
-            <div class="overflow-y-auto pr-2 mb-4">
-                <h3 class="text-indigo-400 font-bold mb-2 uppercase text-xs tracking-widest">Words to Practice:</h3>
-                <div id="wrong-words-list" class="space-y-2"></div>
-            </div>
-
-            <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg">Play Again! 🔄</button>
+            <button onclick="startNextLevel()" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold text-lg shadow-lg">Next Level 🚀</button>
         </div>
     </div>
 
     <script>
-        /** * DATA MANAGEMENT
-         * Updated to full 208 words from CSV.
-         */
-        
-        const rawCSVData = `DO,NATION
-SLIT,HER
-CAR,GO
-COMB,AT
-FOR,MAT
-FOR,BID
-RAM,PAGE
-HIGH,BALL
-HAND,SOME
-AN,OTHER
-POWER,LESS
-CENT,RALLY
-CAN,ON
-AIR,LINE
-CAR,PET
-TAR,GET
-FOR,TUNE
-PART,RIDGE
-CART,RIDGE
-KNOW,LEDGE
-OUT,LET
-ACT,OR
-FORE,CAST
-OR,DEAL
-TRIP,LET
-FACT,OR
-TURN,COAT
-WATER,FALL
-SO,LID
-SEED,LING
-EAR,WIG
-AS,CENT
-PAGE,ANT
-STIR,RING
-AT,TACK
-IN,SCRIBE
-BUTTER,CUP
-SAT,URN
-PASS,AGE
-JUST,ICE
-UP,HOLD
-AM,BUSH
-WAG,ON
-OUT,PUT
-BAND,IT
-TO,WING
-DEAD,LOCK
-RAN,SACK
-PORT,ABLE
-NO,VICE
-FEAT,HER
-HEAT,HER
-HUM,AN
-COT,TON
-SNAP,PING
-BAR,GAIN
-FUR,ROW
-CAB,IN
-PUFF,IN
-RAIL,WAY
-BAR,ROW
-DAM,AGE
-A,VOID
-A,WAY
-TRAP,DOOR
-WEEK,END
-NOT,ICE
-CART,ON
-BE,AT
-ME,AN
-BE,HIND
-TAB,LET
-BAT,ON
-BUT,TON
-MAN,AGE
-CAR,CASE
-CAP,ABLE
-QUEST,ION
-BIRTH,DAY
-FOR,GET
-CAR,ROT
-IN,CREASE
-MAY,OR
-PULL,OVER
-OR,BIT
-PRIM,ROSE
-NAP,KIN
-AS,KING
-FORT,NIGHT
-BIT,TEN
-FRIEND,SHIP
-REST,LESS
-HER,ON
-BAND,AGE
-FOR,WARD
-IS,LAND
-ROT,TEN
-OVER,WEIGHT
-POST,AGE
-ADAPT,ABLE
-KEY,BOARD
-CARE,TAKER
-CUP,BOARD
-EYE,BALL
-REST,RAIN
-MAN,HOLE
-OVER,ACT
-SIDE,BOARD
-COPY,RIGHT
-NO,BODY
-NOW,HERE
-RUN,AWAY
-OFF,SPRING
-OUT,LAW
-UNDER,GROWTH
-SOME,ONE
-WHAT,EVER
-UNDER,TAKE
-OVER,COAT
-SUN,BURN
-UP,ON
-OUT,BURST
-VIEW,POINT
-STY,LED
-EVER,GREEN
-DATA,BASE
-DOWN,LOAD
-BROAD,BAND
-OVER,DUE
-PASS,PORT
-PIN,STRIPE
-YOUR,SELF
-WE,ATHER
-HEAD,LAND
-HEART,ACHE
-HOME,MADE
-HEART,BEAT
-HONEY,COMB
-BOOK,MARK
-FIRE,PLACE
-WATER,FALL
-BUTTER,FLY
-ARM,CHAIR
-AFTER,NOON
-BATH,ROOM
-BACK,BONE
-BACK,GROUND
-BACK,WARD
-BED,TIME
-BLUE,BELL
-BOOK,CASE
-CAMP,FIRE
-CANDLE,STICK
-DISH,WASHER
-DOG,HOUSE
-DOWN,STAIRS
-DRAGON,FLY
-DRESS,MAKER
-EAR,RING
-EVERY,BODY
-EVERY,THING
-FARM,HOUSE
-FOOT,BALL
-FOOT,PRINT
-GOLD,FISH
-GRAND,FATHER
-GRAND,MOTHER
-GRASS,HOPPER
-GROUND,WORK
-HAIR,CUT
-HAND,BAG
-HAND,WRITING
-HEAD,ACHE
-HEAD,LIGHT
-HOME,WORK
-HORSE,BACK
-HOUSE,HOLD
-HOUSE,WORK
-IN,SIDE
-JELLY,FISH
-LADY,BIRD
-LIFE,BOAT
-LIGHT,HOUSE
-LIP,STICK
-MID,NIGHT
-MOTOR,WAY
-NAME,PLATE
-NEW,SPAPER
-NIGHT,MARE
-OUT,SIDE
-OVER,TAKE
-PAN,CAKE
-PAPER,BACK
-PLAY,GROUND
-POLICE,MAN
-POST,MAN
-RAIN,BOW
-RAIN,COAT
-RIVER,SIDE
-ROAD,SIDE
-SAIL,BOAT
-SAND,CASTLE
-SCARE,CROW
-SCHOOL,BOY
-SCHOOL,GIRL
-SEA,SIDE
-SHIP,WRECK
-SHOP,KEEPER
-SKATE,BOARD
-SNOW,BALL
-SNOW,MAN
-SOME,BODY
-SOME,TIMES
-SOME,WHERE
-SOUND,PROOF
-SPACE,SHIP
-STAIR,CASE
-STAR,FISH
-STEAM,BOAT
-SUN,FLOWER
-SUN,GLASSES
-SUN,LIGHT
-SUN,SET
-SUN,SHINE
-TABLE,CLOTH
-TABLE,SPOON
-TEA,POT
-THUNDER,STORM
-TIME,TABLE
-TOOTH,BRUSH
-TOOTH,PASTE
-UP,STAIRS
-WALL,PAPER
-WASH,ROOM
-WATCH,MAN
-WATER,COLOR
-WATER,PROOF
-WHEEL,CHAIR
-WOOD,LAND`;
+        // --- DATA ---
+        const rawCSVData = `DO,NATION\nSLIT,HER\nCAR,GO\nCOMB,AT\nFOR,MAT\nFOR,BID\nRAM,PAGE\nHIGH,BALL\nHAND,SOME\nAN,OTHER\nPOWER,LESS\nCENT,RALLY\nCAN,ON\nAIR,LINE\nCAR,PET\nTAR,GET\nFOR,TUNE\nPART,RIDGE\nCART,RIDGE\nKNOW,LEDGE\nOUT,LET\nACT,OR\nFORE,CAST\nOR,DEAL\nTRIP,LET\nFACT,OR\nTURN,COAT\nWATER,FALL\nSO,LID\nSEED,LING\nEAR,WIG\nAS,CENT\nPAGE,ANT\nSTIR,RING\nAT,TACK\nIN,SCRIBE\nBUTTER,CUP\nSAT,URN\nPASS,AGE\nJUST,ICE\nUP,HOLD\nAM,BUSH\nWAG,ON\nOUT,PUT\nBAND,IT\nTO,WING\nDEAD,LOCK\nRAN,SACK\nPORT,ABLE\nNO,VICE\nFEAT,HER\nHEAT,HER\nHUM,AN\nCOT,TON\nSNAP,PING\nBAR,GAIN\nFUR,ROW\nCAB,IN\nPUFF,IN\nRAIL,WAY\nBAR,ROW\nDAM,AGE\nA,VOID\nA,WAY\nTRAP,DOOR\nWEEK,END\nNOT,ICE\nCART,ON\nBE,AT\nME,AN\nBE,HIND\nTAB,LET\nBAT,ON\nBUT,TON\nMAN,AGE\nCAR,CASE\nCAP,ABLE\nQUEST,ION\nBIRTH,DAY\nFOR,GET\nCAR,ROT\nIN,CREASE\nMAY,OR\nPULL,OVER\nOR,BIT\nPRIM,ROSE\nNAP,KIN\nAS,KING\nFORT,NIGHT\nBIT,TEN\nFRIEND,SHIP\nREST,LESS\nHER,ON\nBAND,AGE\nFOR,WARD\nIS,LAND\nROT,TEN\nOVER,WEIGHT\nPOST,AGE\nADAPT,ABLE\nKEY,BOARD\nCARE,TAKER\nCUP,BOARD\nEYE,BALL\nREST,RAIN\nMAN,HOLE\nOVER,ACT\nSIDE,BOARD\nCOPY,RIGHT\nNO,BODY\nNOW,HERE\nRUN,AWAY\nOFF,SPRING\nOUT,LAW\nUNDER,GROWTH\nSOME,ONE\nWHAT,EVER\nUNDER,TAKE\nOVER,COAT\nSUN,BURN\nUP,ON\nOUT,BURST\nVIEW,POINT\nSTY,LED\nEVER,GREEN\nDATA,BASE\nDOWN,LOAD\nBROAD,BAND\nOVER,DUE\nPASS,PORT\nPIN,STRIPE\nYOUR,SELF\nWE,ATHER\nHEAD,LAND\nHEART,ACHE\nHOME,MADE\nHEART,BEAT\nHONEY,COMB\nBOOK,MARK\nFIRE,PLACE\nWATER,FALL\nBUTTER,FLY\nARM,CHAIR\nAFTER,NOON\nBATH,ROOM\nBACK,BONE\nBACK,GROUND\nBACK,WARD\nBED,TIME\nBLUE,BELL\nBOOK,CASE\nCAMP,FIRE\nCANDLE,STICK\nDISH,WASHER\nDOG,HOUSE\nDOWN,STAIRS\nDRAGON,FLY\nDRESS,MAKER\nEAR,RING\nEVERY,BODY\nEVERY,THING\nFARM,HOUSE\nFOOT,BALL\nFOOT,PRINT\nGOLD,FISH\nGRAND,FATHER\nGRAND,MOTHER\nGRASS,HOPPER\nGROUND,WORK\nHAIR,CUT\nHAND,BAG\nHAND,WRITING\nHEAD,ACHE\nHEAD,LIGHT\nHOME,WORK\nHORSE,BACK\nHOUSE,HOLD\nHOUSE,WORK\nIN,SIDE\nJELLY,FISH\nLADY,BIRD\nLIFE,BOAT\nLIGHT,HOUSE\nLIP,STICK\nMID,NIGHT\nMOTOR,WAY\nNAME,PLATE\nNEW,SPAPER\nNIGHT,MARE\nOUT,SIDE\nOVER,TAKE\nPAN,CAKE\nPAPER,BACK\nPLAY,GROUND\nPOLICE,MAN\nPOST,MAN\nRAIN,BOW\nRAIN,COAT\nRIVER,SIDE\nROAD,SIDE\nSAIL,BOAT\nSAND,CASTLE\nSCARE,CROW\nSCHOOL,BOY\nSCHOOL,GIRL\nSEA,SIDE\nSHIP,WRECK\nSHOP,KEEPER\nSKATE,BOARD\nSNOW,BALL\nSNOW,MAN\nSOME,BODY\nSOMETIMES\nSOMEWHERE\nSOUND,PROOF\nSPACE,SHIP\nSTAIR,CASE\nSTAR,FISH\nSTEAM,BOAT\nSUN,FLOWER\nSUN,GLASSES\nSUN,LIGHT\nSUN,SET\nSUN,SHINE\nTABLE,CLOTH\nTABLE,SPOON\nTEA,POT\nTHUNDER,STORM\nTIME,TABLE\nTOOTH,BRUSH\nTOOTH,PASTE\nUP,STAIRS\nWALL,PAPER\nWASH,ROOM\nWATCH,MAN\nWATER,COLOR\nWATER,PROOF\nWHEEL,CHAIR\nWOOD,LAND`;
 
-        const staticDictionary = {
-            "DONATION": "Something given to a cause or charity.",
-            "SLITHER": "To move with a sliding motion like a snake.",
-            "CARGO": "Goods carried on a ship, aircraft, or motor vehicle.",
-            "COMBAT": "Fighting between armed forces.",
-            "FORMAT": "The way in which something is arranged or set out.",
-            "FORBID": "To refuse to allow something.",
-            "RAMPAGE": "A period of violent and uncontrollable behavior.",
-            "HIGHBALL": "A type of cocktail served in a tall glass.",
-            "HANDSOME": "Good-looking or attractive.",
-            "ANOTHER": "Used to refer to an additional person or thing.",
-            "POWERLESS": "Without the ability to influence or control.",
-            "CENTRALLY": "In or near the center of an area.",
-            "CANON": "A general law, rule, or criterion by which something is judged.",
-            "AIRLINE": "A company that provides regular flights.",
-            "CARPET": "A floor covering made of thick woven fabric.",
-            "TARGET": "A person, object, or place selected as the aim of an attack.",
-            "FORTUNE": "Chance or luck as an external force affecting human affairs.",
-            "PARTRIDGE": "A short-tailed game bird.",
-            "CARTRIDGE": "A casing containing a charge and a bullet.",
-            "KNOWLEDGE": "Facts, information, and skills acquired through experience.",
-            "OUTLET": "A pipe or hole through which water or gas may escape.",
-            "ACTOR": "A person whose profession is acting.",
-            "FORECAST": "A prediction or estimate of future events.",
-            "ORDEAL": "A painful or horrific experience.",
-            "TRIPLET": "One of three children born at a single birth.",
-            "FACTOR": "A circumstance, fact, or influence that contributes to a result.",
-            "TURNCOAT": "A person who deserts one party or cause in order to join an opposing one.",
-            "WATERFALL": "A cascade of water falling from a height.",
-            "SOLID": "Firm and stable in shape; not liquid or fluid.",
-            "SEEDLING": "A young plant, especially one raised from seed.",
-            "EARWIG": "A small insect with pincers at the end of its abdomen.",
-            "ASCENT": "A climb or walk to the summit of a mountain or hill.",
-            "PAGEANT": "A public entertainment consisting of a procession or a play.",
-            "STIRRING": "Causing great excitement or strong emotion.",
-            "ATTACK": "An aggressive and violent action against a person or place.",
-            "INSCRIBE": "To write or carve on something.",
-            "BUTTERCUP": "A herbaceous plant with bright yellow cup-shaped flowers.",
-            "SATURN": "The sixth planet from the sun with large rings.",
-            "PASSAGE": "A way through which something may pass.",
-            "JUSTICE": "Fair behavior or treatment.",
-            "UPHOLD": "To confirm or support.",
-            "AMBUSH": "A surprise attack by people lying in wait.",
-            "WAGON": "A vehicle used for transporting goods or another specified purpose.",
-            "OUTPUT": "The amount of something produced.",
-            "BANDIT": "A robber or outlaw.",
-            "TOWING": "To pull a vehicle or boat along with a rope, chain, or tow bar.",
-            "DEADLOCK": "A situation, typically one involving opposing parties, in which no progress can be made.",
-            "RANSACK": "To go hurriedly through a place stealing things and causing damage.",
-            "PORTABLE": "Able to be easily carried or moved.",
-            "NOVICE": "A person new to and inexperienced in a job or situation.",
-            "FEATHER": "Structures that cover the bodies of birds.",
-            "HEATHER": "A purple-flowered plant.",
-            "HUMAN": "Relating to or characteristic of people.",
-            "COTTON": "A soft white fibrous substance.",
-            "SNAPPING": "To break suddenly and completely.",
-            "BARGAIN": "A thing bought or offered for sale more cheaply than is usual.",
-            "FURROW": "A long narrow trench made in the ground by a plow.",
-            "CABIN": "A small wooden shelter or house.",
-            "PUFFIN": "A hole-nesting auk with a large brightly colored beak.",
-            "RAILWAY": "A track made of steel rails along which trains run.",
-            "BARROW": "A wheelbarrow or a pushcart.",
-            "DAMAGE": "Harm caused to something in such a way as to impair its value.",
-            "AVOID": "Keep away from or stop oneself from doing something.",
-            "AWAY": "To or at a distance from a particular place.",
-            "TRAPDOOR": "A door in a floor or ceiling.",
-            "WEEKEND": "Saturday and Sunday.",
-            "NOTICE": "The fact of observing or paying attention to something.",
-            "CARTON": "A light box or container.",
-            "BEAT": "To strike a person or an animal repeatedly.",
-            "MEAN": "Intending to convey or refer to.",
-            "BEHIND": "At or to the far side of something.",
-            "TABLET": "A flat slab of stone, clay, or wood, used for writing.",
-            "BATON": "A thin stick used by a conductor.",
-            "BUTTON": "A small disk or knob sown onto a garment.",
-            "MANAGE": "Be in charge of.",
-            "CARCASE": "The dead body of an animal.",
-            "CAPABLE": "Having the ability, fitness, or quality necessary to do or achieve a specified thing.",
-            "QUESTION": "A sentence worded or expressed so as to elicit information.",
-            "BIRTHDAY": "The anniversary of the day on which a person was born.",
-            "FORGET": "Fail to remember.",
-            "CARROT": "A tapering orange-colored root vegetable.",
-            "INCREASE": "Become or make greater in size, amount, intensity, or degree.",
-            "MAYOR": "The elected head of a city, town, or other municipality.",
-            "PULLOVER": "A sweater with no fasteners that is put on by being pulled over the head.",
-            "ORBIT": "The curved path of a celestial object or spacecraft.",
-            "PRIMROSE": "A common plant which produces pale yellow flowers.",
-            "NAPKIN": "A square piece of cloth or paper used at a meal to wipe the fingers or lips.",
-            "ASKING": "Say something in order to obtain information or advice.",
-            "FORTNIGHT": "A period of two weeks.",
-            "BITTEN": "The past participle of bite.",
-            "FRIENDSHIP": "The emotions or conduct of friends.",
-            "RESTLESS": "Unable to rest or relax as a result of anxiety or boredom.",
-            "HERON": "A large fish-eating wading bird.",
-            "BANDAGE": "A strip of material used to bind a wound.",
-            "FORWARD": "Toward the front; in the direction that one is facing or traveling.",
-            "ISLAND": "A piece of land surrounded by water.",
-            "ROTTEN": "Decaying or enjoyed by bacteria.",
-            "OVERWEIGHT": "Above a weight considered normal or desirable.",
-            "POSTAGE": "The charge for mailing an item.",
-            "ADAPTABLE": "Able to adjust to new conditions.",
-            "KEYBOARD": "A panel of keys used to operate a computer.",
-            "CARETAKER": "A person employed to look after a public building.",
-            "CUPBOARD": "A cabinet or closet with shelves.",
-            "EYEBALL": "The entire ball of the eye.",
-            "RESTRAIN": "To prevent from doing something.",
-            "MANHOLE": "A small covered opening in a paved area.",
-            "OVERACT": "To act with unnecessary exaggeration.",
-            "SIDEBOARD": "A flat-topped piece of furniture used for storing table linen.",
-            "COPYRIGHT": "The exclusive legal right to use material.",
-            "NOBODY": "No person; no one.",
-            "NOWHERE": "Not in or at any place.",
-            "RUNAWAY": "A person who has run away.",
-            "OFFSPRING": "A person's child or children.",
-            "OUTLAW": "A person who has broken the law.",
-            "UNDERGROWTH": "A dense growth of shrubs and other plants.",
-            "SOMEONE": "An unspecified person.",
-            "WHATEVER": "Used to emphasize a lack of restriction in referring to anything.",
-            "UNDERTAKE": "Commit oneself to and begin.",
-            "OVERCOAT": "A long thick coat worn over other clothes.",
-            "SUNBURN": "Reddening and inflammation of the skin caused by overexposure to the sun.",
-            "UPON": "More formal term for on.",
-            "OUTBURST": "A sudden release of strong emotion.",
-            "VIEWPOINT": "A person's opinion or point of view.",
-            "STYLED": "Design or make in a particular form.",
-            "EVERGREEN": "A plant that retains green leaves throughout the year.",
-            "DATABASE": "A structured set of data held in a computer.",
-            "DOWNLOAD": "To copy data from one computer system to another.",
-            "BROADBAND": "A high-capacity transmission technique.",
-            "OVERDUE": "Not having arrived, happened, or been done by the expected time.",
-            "PASSPORT": "An official document issued by a government.",
-            "PINSTRIPE": "A very narrow stripe in cloth.",
-            "YOURSELF": "Used to refer to the person being addressed.",
-            "WEATHER": "The state of the atmosphere.",
-            "HEADLAND": "A narrow piece of land that projects from a coastline into the sea.",
-            "HEARTACHE": "Emotional pain or distress.",
-            "HOMEMADE": "Made at home rather than in a shop or factory.",
-            "HEARTBEAT": "The pulsation of the heart.",
-            "HONEYCOMB": "A structure of hexagonal cells of wax made by bees.",
-            "BOOKMARK": "A strip of leather, cardboard, or other material used to mark a place in a book.",
-            "FIREPLACE": "A place for a domestic fire.",
-            "BUTTERFLY": "An insect with two pairs of large wings that are covered in tiny scales.",
-            "ARMCHAIR": "A comfortable chair with side supports for a person's arms.",
-            "AFTERNOON": "The time from noon or lunchtime to evening.",
-            "BATHROOM": "A room containing a bathtub or shower and usually a washbasin and toilet.",
-            "BACKBONE": "The series of vertebrae extending from the skull to the pelvis.",
-            "BACKGROUND": "The part of a picture, scene, or design that forms a setting for the main figures.",
-            "BACKWARD": "Directed toward the back.",
-            "BEDTIME": "The usual time when someone goes to bed.",
-            "BLUEBELL": "A woodland plant with clusters of blue bell-shaped flowers.",
-            "BOOKCASE": "A piece of furniture with shelves for storing books.",
-            "CAMPFIRE": "An open-air fire in a camp.",
-            "CANDLESTICK": "A holder for a candle.",
-            "DISHWASHER": "A machine for washing dishes automatically.",
-            "DOGHOUSE": "A small shelter for a dog.",
-            "DOWNSTAIRS": "On or to a lower floor of a building.",
-            "DRAGONFLY": "A fast-flying insect with a long body and two pairs of large wings.",
-            "DRESSMAKER": "A person who makes women's clothes.",
-            "EARRING": "A piece of jewelry worn on the lobe or edge of the ear.",
-            "EVERYBODY": "Every person.",
-            "EVERYTHING": "All things.",
-            "FARMHOUSE": "The main house of a farm.",
-            "FOOTBALL": "A game played by two teams of eleven players with a round ball.",
-            "FOOTPRINT": "The mark left by a foot or shoe on a surface.",
-            "GOLDFISH": "A small reddish-golden Eurasian carp.",
-            "GRANDFATHER": "The father of one's father or mother.",
-            "GRANDMOTHER": "The mother of one's father or mother.",
-            "GRASSHOPPER": "A plant-eating insect with long hind legs used for jumping.",
-            "GROUNDWORK": "Preliminary or basic work.",
-            "HAIRCUT": "The style in which a person's hair is cut.",
-            "HANDBAG": "A small bag used by women for carrying personal items.",
-            "HANDWRITING": "A person's particular style of writing.",
-            "HEADACHE": "A continuous pain in the head.",
-            "HEADLIGHT": "A powerful light at the front of a motor vehicle.",
-            "HOMEWORK": "Schoolwork that a pupil is required to do at home.",
-            "HORSEBACK": "The back of a horse.",
-            "HOUSEHOLD": "A house and its occupants regarded as a unit.",
-            "HOUSEWORK": "Regular work done in housekeeping.",
-            "INSIDE": "The inner side or surface of something.",
-            "JELLYFISH": "A free-swimming marine coelenterate with a jelly-like body.",
-            "LADYBIRD": "A small beetle which is typically red with black spots.",
-            "LIFEBOAT": "A boat used for rescuing people in difficulties at sea.",
-            "LIGHTHOUSE": "A tower or other structure containing a beacon light to warn or guide ships at sea.",
-            "LIPSTICK": "Colored cosmetic applied to the lips.",
-            "MIDNIGHT": "Twelve o'clock at night.",
-            "MOTORWAY": "A dual-carriageway road designed for fast traffic.",
-            "NAMEPLATE": "A plate inscribed with a person's or organization's name.",
-            "NEWSPAPER": "A printed publication consisting of folded unstapled sheets and containing news.",
-            "NIGHTMARE": "A frightening or unpleasant dream or frightening experience.",
-            "OUTSIDE": "The external side or surface of something.",
-            "PANCAKE": "A thin, flat cake of batter, fried on both sides in a pan.",
-            "PAPERBACK": "A book bound in stiff paper or card.",
-            "PLAYGROUND": "An outdoor area provided for children to play in.",
-            "POLICEMAN": "A male member of a police force.",
-            "POSTMAN": "A person who is employed to deliver or collect letters and parcels.",
-            "RAINBOW": "An arch of colors visible in the sky.",
-            "RAINCOAT": "A waterproof coat.",
-            "RIVERSIDE": "The ground along the edge of a river.",
-            "ROADSIDE": "The strip of land beside a road.",
-            "SAILBOAT": "A boat propelled by sails.",
-            "SANDCASTLE": "A model of a castle built out of sand.",
-            "SCARECROW": "An object made to resemble a human figure, set up to scare birds away from a field.",
-            "SCHOOLBOY": "A boy attending school.",
-            "SCHOOLGIRL": "A girl attending school.",
-            "SEASIDE": "A place by the sea.",
-            "SHIPWRECK": "The destruction of a ship at sea by sinking or breaking up.",
-            "SHOPKEEPER": "A person who owns and manages a small shop.",
-            "SKATEBOARD": "A short narrow board with two small wheels fixed to the bottom of either end.",
-            "SNOWBALL": "A ball of packed snow.",
-            "SNOWMAN": "A figure of a person made of packed snow.",
-            "SOMEBODY": "A person who is unspecified.",
-            "SOMETIMES": "Occasionally.",
-            "SOMEWHERE": "In or to some place.",
-            "SOUNDPROOF": "Not allowing sound to pass through.",
-            "SPACESHIP": "A spacecraft.",
-            "STAIRCASE": "A set of stairs and its surrounding structure.",
-            "STARFISH": "A marine echinoderm with five or more radiating arms.",
-            "STEAMBOAT": "A boat which is propelled by a steam engine.",
-            "SUNFLOWER": "A tall North American plant of the daisy family.",
-            "SUNGLASSES": "Glasses with tinted lenses to protect the eyes from sunlight.",
-            "SUNLIGHT": "Light from the sun.",
-            "SUNSET": "The time in the evening when the sun disappears or daylight fades.",
-            "SUNSHINE": "Direct sunlight unbroken by cloud.",
-            "TABLECLOTH": "A cloth used for covering a table.",
-            "TABLESPOON": "A large spoon for serving food.",
-            "TEAPOT": "A pot with a handle, spout, and lid, in which tea is brewed and from which it is poured.",
-            "THUNDERSTORM": "A storm with thunder and lightning and typically also heavy rain or hail.",
-            "TIMETABLE": "A chart showing the departure and arrival times of trains, buses, or aircraft.",
-            "TOOTHBRUSH": "A small brush used for cleaning the teeth.",
-            "TOOTHPASTE": "A thick paste used with a toothbrush to clean the teeth.",
-            "UPSTAIRS": "On or to an upper floor of a building.",
-            "WALLPAPER": "Paper used for pasting on to the interior walls of rooms.",
-            "WASHROOM": "A room with washing and toilet facilities.",
-            "WATCHMAN": "A man employed to look after an empty building.",
-            "WATERCOLOR": "Artists' paint made with a water-soluble binder.",
-            "WATERPROOF": "Impervious to water.",
-            "WHEELCHAIR": "A chair on wheels for use by people who are unable to walk.",
-            "WOODLAND": "Land covered with trees."
+        const staticDictionary = { "DONATION": "Something given to a cause.", "SLITHER": "Moving like a snake.", "CARGO": "Goods on a ship." };
+
+        // --- SOUND ENGINE ---
+        const AudioEngine = {
+            ctx: null, streak: 0, consecutiveErrors: 0,
+            init() { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+            getRandomPitch(freq) { return freq + (Math.random() * freq * 0.1 - freq * 0.05); },
+            getVolume(baseVol = 0.2) {
+                if (document.getElementById('mute-toggle').checked) return 0;
+                let vol = baseVol;
+                if (this.consecutiveErrors >= 3) vol *= 0.5;
+                if (document.getElementById('calm-toggle').checked) vol *= 0.6;
+                return vol;
+            },
+            playNote(freq, type = 'triangle', duration = 0.2, volume = 0.2) {
+                if (!this.ctx) this.init();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(this.getRandomPitch(freq), this.ctx.currentTime);
+                gain.gain.setValueAtTime(volume, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + duration);
+            },
+            correct() {
+                this.consecutiveErrors = 0; this.streak++;
+                const vol = this.getVolume(0.15);
+                this.playNote(523.25, 'triangle', 0.15, vol);
+                setTimeout(() => this.playNote(659.25, 'triangle', 0.25, vol), 80);
+            },
+            wrong() {
+                this.streak = 0; this.consecutiveErrors++;
+                this.playNote(110, 'sine', 0.3, this.getVolume(0.1));
+            },
+            pop() { this.playNote(800, 'sine', 0.05, this.getVolume(0.1)); },
+            levelComplete() {
+                const vol = this.getVolume(0.2);
+                [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => this.playNote(f, 'square', 0.3, vol), i * 150));
+            },
+            tap() { this.playNote(400, 'triangle', 0.05, this.getVolume(0.05)); }
         };
 
+        // --- GAME LOGIC ---
         let masterWordList = [];
-        let shuffledWordList = [];
         let currentLevel = 1;
         let score = 0;
-        let completedInLevel = 0;
-        let selectedPrefix = null;
-        let triesForCurrentWord = 0;
-        let wrongWords = [];
+        let levelWords = [];
         let isProcessing = false;
-        let totalLevels = 0;
 
-        // CSV Parser and Validator
         function processCSV() {
             const lines = rawCSVData.split('\n');
-            let skipped = 0;
-            const parsed = [];
-
-            lines.forEach(line => {
-                const parts = line.split(',');
-                
-                // Skip header if present
-                if (parts[0].trim().toLowerCase() === "part1") return;
-
-                // Validation: 2 non-empty values, A-Z only (using regex for safety)
-                if (parts.length === 2 && 
-                    parts[0].trim() !== "" && 
-                    parts[1].trim() !== "" && 
-                    /^[A-Z]+$/.test(parts[0].trim()) && 
-                    /^[A-Z]+$/.test(parts[1].trim())) {
-                    
-                    const p = parts[0].trim();
-                    const s = parts[1].trim();
-                    const full = p + s;
-                    
-                    parsed.push({
-                        p: p,
-                        s: s,
-                        m: staticDictionary[full] || `A compound word formed from ${p} and ${s}.`
-                    });
-                } else {
-                    skipped++;
-                }
+            masterWordList = lines.map(line => {
+                const [p, s] = line.split(',');
+                return { p, s, full: p + s, m: staticDictionary[p+s] || "A compound word." };
             });
-
-            console.log(`Parsed ${parsed.length} words. Skipped ${skipped} invalid rows.`);
-            masterWordList = parsed;
-            totalLevels = Math.floor(masterWordList.length / 5);
         }
 
-        function shuffleAllWords() {
-            shuffledWordList = [...masterWordList].sort(() => Math.random() - 0.5);
-        }
-
-        function loadLevel(lvl) {
-            completedInLevel = 0;
-            isProcessing = false;
+        function setupLevel() {
+            const startIdx = (currentLevel - 1) * 5 % masterWordList.length;
+            levelWords = masterWordList.slice(startIdx, startIdx + 5);
+            document.getElementById('level-display').textContent = currentLevel;
             document.getElementById('meaning-box').style.opacity = '0';
-            
-            const startIdx = (lvl - 1) * 5;
-            const words = shuffledWordList.slice(startIdx, startIdx + 5);
-            
-            if (words.length < 5 || lvl > totalLevels) {
-                showEndGameSummary();
-                return;
-            }
-
-            renderColumn('left-col', [...words].sort(() => Math.random() - 0.5), 'prefix');
-            renderColumn('right-col', [...words].sort(() => Math.random() - 0.5), 'suffix');
-            updateUI();
+            document.getElementById('progress-bar').style.width = '0%';
+            initBubbleMode();
         }
 
-        function renderColumn(id, list, type) {
-            const col = document.getElementById(id);
-            col.innerHTML = '';
-            list.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'word-btn bg-slate-800 border-2 border-slate-700 shadow-md hover:border-indigo-400 transition-all';
-                div.textContent = type === 'prefix' ? item.p : item.s;
-                div.dataset.pairId = item.p + item.s;
-                div.onclick = () => {
-                    if (isProcessing || div.classList.contains('correct-anim') || div.classList.contains('wrong-reveal')) return;
+        function initBubbleMode() {
+            let bubbleMatches = 0;
+            let firstBubble = null;
+            const arena = document.getElementById('bubble-arena');
+            const foundList = document.getElementById('bubble-found-list');
+            document.getElementById('bubble-container').classList.remove('hidden');
+            arena.innerHTML = ''; foundList.innerHTML = '';
+            
+            const parts = [];
+            levelWords.forEach(w => {
+                parts.push({ text: w.p, id: w.full, type: 'prefix' });
+                parts.push({ text: w.s, id: w.full, type: 'suffix' });
+            });
+            parts.sort(() => Math.random() - 0.5);
+
+            parts.forEach((p, i) => {
+                const b = document.createElement('div');
+                b.className = 'bubble bg-indigo-500/60 text-white font-bold';
+                b.textContent = p.text;
+                b.style.width = '85px'; b.style.height = '85px';
+                b.style.left = (10 + (i % 3) * 28 + Math.random() * 5) + '%';
+                b.style.top = (10 + Math.floor(i / 3) * 18 + Math.random() * 5) + '%';
+                
+                b.onclick = () => {
+                    if (b.classList.contains('opacity-0') || isProcessing) return;
                     
-                    if (type === 'prefix') {
-                        if (selectedPrefix) selectedPrefix.classList.remove('selected');
-                        selectedPrefix = div;
-                        div.classList.add('selected');
-                    } else if (selectedPrefix) {
-                        checkMatch(div);
+                    if (!firstBubble) {
+                        // ENFORCE ORDER: Must be a prefix to start
+                        if (p.type !== 'prefix') {
+                            AudioEngine.wrong();
+                            b.classList.add('shake');
+                            setTimeout(() => b.classList.remove('shake'), 400);
+                            return; 
+                        }
+                        AudioEngine.tap();
+                        firstBubble = { el: b, id: p.id };
+                        b.classList.add('active-selection', 'bg-indigo-600');
+                    } else if (firstBubble.el === b) {
+                        firstBubble = null;
+                        b.classList.remove('active-selection', 'bg-indigo-600');
+                    } else {
+                        // Attempting match
+                        if (firstBubble.id === p.id && p.type === 'suffix') {
+                            isProcessing = true;
+                            AudioEngine.pop(); AudioEngine.correct();
+                            b.classList.add('opacity-0', 'scale-150');
+                            firstBubble.el.classList.add('opacity-0', 'scale-150');
+                            
+                            const tag = document.createElement('span');
+                            tag.className = 'bg-green-600 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap';
+                            tag.textContent = p.id;
+                            foundList.appendChild(tag);
+                            
+                            score += 100; bubbleMatches++;
+                            showWordMeaning(levelWords.find(w => w.full === p.id));
+                            checkLevelComplete(bubbleMatches, 5);
+                            setTimeout(() => { isProcessing = false; }, 300);
+                        } else {
+                            // Incorrect match OR wrong order (clicked another prefix second)
+                            AudioEngine.wrong();
+                            firstBubble.el.classList.remove('active-selection', 'bg-indigo-600');
+                            b.classList.add('shake');
+                            setTimeout(() => b.classList.remove('shake'), 400);
+                        }
+                        firstBubble = null;
+                        updateUI();
                     }
                 };
-                col.appendChild(div);
+                arena.appendChild(b);
             });
         }
 
-        function checkMatch(sufDiv) {
-            const pairId = selectedPrefix.dataset.pairId;
-            const matchId = sufDiv.dataset.pairId;
-
-            if (pairId === matchId) {
-                let points = 100;
-                if (triesForCurrentWord === 1) points = 50;
-                if (triesForCurrentWord >= 2) points = 20;
-                
-                score += points;
-                handleMatchSuccess(selectedPrefix, sufDiv, pairId);
-            } else {
-                triesForCurrentWord++;
-                selectedPrefix.classList.remove('selected');
-                
-                if (triesForCurrentWord >= 3) {
-                    const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
-                    if (!wrongWords.some(w => w.p + w.s === pairId)) {
-                        wrongWords.push(wordObj);
-                    }
-                    revealCorrectAnswer(pairId);
-                } else {
-                    selectedPrefix.classList.add('shake');
-                    sufDiv.classList.add('shake');
-                    isProcessing = true;
-                    setTimeout(() => {
-                        selectedPrefix.classList.remove('shake');
-                        sufDiv.classList.remove('shake');
-                        selectedPrefix = null;
-                        isProcessing = false;
-                        updateUI();
-                    }, 400);
-                }
+        function checkLevelComplete(current, total) {
+            document.getElementById('progress-bar').style.width = (current / total * 100) + '%';
+            if (current >= total) {
+                AudioEngine.levelComplete();
+                setTimeout(() => {
+                    document.getElementById('completed-lvl').textContent = currentLevel;
+                    document.getElementById('overlay').classList.remove('hidden');
+                }, 800);
             }
-        }
-
-        function handleMatchSuccess(pre, suf, pairId) {
-            isProcessing = true;
-            pre.classList.add('correct-anim');
-            suf.classList.add('correct-anim');
-            
-            const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
-            showWordMeaning(wordObj);
-            
-            setTimeout(() => {
-                finishWordRound();
-            }, 600);
-        }
-
-        function revealCorrectAnswer(pairId) {
-            isProcessing = true;
-            const pre = document.querySelector(`#left-col [data-pair-id="${pairId}"]`);
-            const suf = document.querySelector(`#right-col [data-pair-id="${pairId}"]`);
-            
-            pre.classList.add('wrong-reveal');
-            suf.classList.add('wrong-reveal');
-            
-            const wordObj = shuffledWordList.find(w => w.p + w.s === pairId);
-            showWordMeaning(wordObj);
-            
-            setTimeout(() => {
-                finishWordRound();
-            }, 1200);
         }
 
         function showWordMeaning(word) {
             const box = document.getElementById('meaning-box');
             box.style.opacity = '1';
-            document.getElementById('word-title').textContent = word.p + word.s;
+            document.getElementById('word-title').textContent = word.full;
             document.getElementById('word-meaning').textContent = word.m;
         }
 
-        function finishWordRound() {
-            completedInLevel++;
-            selectedPrefix = null;
-            triesForCurrentWord = 0;
-            isProcessing = false;
-            
-            if (completedInLevel === 5) {
-                document.getElementById('completed-lvl').textContent = currentLevel;
-                if (currentLevel === totalLevels) {
-                    document.getElementById('next-level-btn').textContent = "Show Final Score 🏆";
-                }
-                document.getElementById('overlay').classList.remove('hidden');
-            }
-            updateUI();
+        function startNextLevel() {
+            document.getElementById('overlay').classList.add('hidden');
+            currentLevel++; setupLevel();
         }
 
-        function updateUI() {
-            document.getElementById('level-display').textContent = currentLevel + "/" + totalLevels;
-            document.getElementById('score-display').textContent = score;
-            document.getElementById('tries-display').textContent = `Tries: ${triesForCurrentWord}/3`;
-            document.getElementById('progress-bar').style.width = (completedInLevel / 5 * 100) + '%';
-        }
-
-        function showEndGameSummary() {
-            const modal = document.getElementById('endgame-modal');
-            const list = document.getElementById('wrong-words-list');
-            document.getElementById('final-score-display').textContent = `Final Score: ${score} Points`;
-            
-            list.innerHTML = '';
-            if (wrongWords.length === 0) {
-                list.innerHTML = '<p class="text-green-400 text-sm">Perfect! No mistakes!</p>';
-            } else {
-                wrongWords.forEach(w => {
-                    const item = document.createElement('div');
-                    item.className = 'bg-slate-700/50 p-2 rounded-lg text-sm border-l-4 border-yellow-500';
-                    item.innerHTML = `<span class="font-bold text-yellow-400">${w.p}${w.s}:</span> ${w.m}`;
-                    list.appendChild(item);
-                });
-            }
-            modal.classList.remove('hidden');
-        }
-
-        function startNextLevel() { 
-            document.getElementById('overlay').classList.add('hidden'); 
-            if (currentLevel >= totalLevels) {
-                showEndGameSummary();
-            } else {
-                currentLevel++; 
-                loadLevel(currentLevel); 
-            }
-        }
-
-        window.onload = () => {
-            processCSV();
-            shuffleAllWords();
-            loadLevel(1);
-        };
+        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
+        function updateUI() { document.getElementById('score-display').textContent = score; }
+        
+        window.onload = () => { processCSV(); setupLevel(); document.body.onclick = () => AudioEngine.init(); };
     </script>
 </body>
 </html>

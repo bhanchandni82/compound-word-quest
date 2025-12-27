@@ -1,122 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compound Quest: Expert Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Compound Word Quest</title>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; overflow-x: hidden; touch-action: manipulation; }
-        .word-btn { transition: all 0.2s; cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; min-height: 60px; text-align: center; padding: 8px; font-weight: bold; }
-        .selected { background-color: #4f46e5 !important; border-color: #818cf8 !important; transform: scale(1.05); }
-        .correct-anim { background-color: #166534 !important; border-color: #22c55e !important; opacity: 0.6; cursor: default; }
-        .shake { animation: shake 0.4s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+      body { font-family: Arial; background: #0f172a; color: white; padding: 40px; }
+      .box { background: #1e293b; padding: 20px; border-radius: 12px; max-width: 600px; }
     </style>
-</head>
-<body class="flex flex-col items-center p-4 min-h-screen">
-    <div class="w-full max-w-md flex justify-between items-center mb-4 bg-slate-800 p-4 rounded-2xl border border-slate-700">
-        <div class="text-center"><span class="text-[10px] text-slate-400 block">Level</span><span id="level-display" class="text-xl font-black text-indigo-400">1/20</span></div>
-        <div class="text-center"><span class="text-[10px] text-slate-400 block">Score</span><span id="score-display" class="text-xl font-black text-yellow-400">0</span></div>
-        <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden"><div id="progress-bar" class="h-full bg-indigo-500 w-0 transition-all"></div></div>
+  </head>
+  <body>
+    <div class="box">
+      <h1>✅ GitHub Pages is rendering HTML correctly</h1>
+      <p>If you can see this styled page, your Pages setup is perfect.</p>
     </div>
-
-    <button onclick="showLevelStory()" class="w-full max-w-md mb-4 py-2 bg-slate-700 rounded-xl text-sm font-bold">📖 Level Master Story</button>
-
-    <div id="game-container" class="w-full max-w-md grid grid-cols-2 gap-4">
-        <div id="left-col" class="flex flex-col gap-3"></div>
-        <div id="right-col" class="flex flex-col gap-3"></div>
-    </div>
-
-    <div id="meaning-box" class="w-full max-w-md mt-6 p-4 bg-indigo-900/30 border border-indigo-500/30 rounded-xl opacity-0 transition-all text-center">
-        <p id="word-title" class="text-indigo-300 font-bold uppercase text-xs mb-1"></p>
-        <p id="word-meaning" class="text-slate-200 text-sm italic mb-2"></p>
-        <p id="word-example" class="text-xs text-indigo-200 border-t border-indigo-500/20 pt-2"></p>
-    </div>
-
-    <div id="story-modal" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-[60] p-6">
-        <div class="bg-slate-800 p-6 rounded-3xl max-w-md w-full"><h3 class="text-indigo-400 font-bold mb-4">Level Story</h3><p id="story-content" class="text-slate-300 italic text-sm"></p><button onclick="closeStoryModal()" class="w-full mt-6 bg-slate-700 py-2 rounded-xl">Close</button></div>
-    </div>
-
-    <div id="overlay" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center hidden z-50 p-6">
-        <div class="bg-slate-800 p-8 rounded-3xl text-center"><div class="text-5xl mb-4">⭐</div><h2 class="text-2xl font-black">Level Complete!</h2><button onclick="startNextLevel()" class="w-full mt-4 bg-indigo-600 py-4 rounded-xl font-bold">Next Level</button></div>
-    </div>
-
-    <script>
-        const levelStories = {
-            1: "The lighthouse keeper stood on the skateboard in the background, making sure his jacket was waterproof before the weatherman arrived.",
-            2: "During the earthquake and thunderstorm, the scarecrow fell over the wheelchair in the field where the grasshopper lived."
-        };
-        const masterWordList = [
-            { p: "Light", s: "house", m: "A tower guiding ships.", e: "The lighthouse cut through the fog." },
-            { p: "Skate", s: "board", m: "A board with wheels.", e: "He rode his skateboard." },
-            { p: "Back", s: "ground", m: "Part of a scene further away.", e: "Mountains were in the background." },
-            { p: "Water", s: "proof", m: "Does not let water through.", e: "His boots are waterproof." },
-            { p: "Weather", s: "man", m: "One who predicts weather.", e: "The weatherman said it would rain." },
-            { p: "Earth", s: "quake", m: "Shaking of the ground.", e: "The earthquake shook the city." },
-            { p: "Thunder", s: "storm", m: "Rain with lightning.", e: "A thunderstorm is coming." },
-            { p: "Scare", s: "crow", m: "Object to keep birds away.", e: "The scarecrow stood in the field." },
-            { p: "Wheel", s: "chair", m: "Chair for mobility.", e: "He uses a wheelchair." },
-            { p: "Grass", s: "hopper", m: "A jumping insect.", e: "The grasshopper jumped away." }
-        ];
-
-        let currentLevel = 1, score = 0, completedInLevel = 0, selectedPrefix = null;
-
-        function loadLevel(lvl) {
-            completedInLevel = 0;
-            document.getElementById('meaning-box').style.opacity = '0';
-            const startIdx = (lvl - 1) * 5;
-            const words = masterWordList.slice(startIdx, startIdx + 5);
-            renderColumn('left-col', [...words].sort(() => Math.random() - 0.5), 'prefix');
-            renderColumn('right-col', [...words].sort(() => Math.random() - 0.5), 'suffix');
-            updateUI();
-        }
-
-        function renderColumn(id, list, type) {
-            const col = document.getElementById(id); col.innerHTML = '';
-            list.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'word-btn bg-slate-800 border-2 border-slate-700 rounded-xl shadow-md';
-                div.textContent = type === 'prefix' ? item.p : item.s;
-                div.dataset.pairId = item.p + item.s;
-                div.onclick = () => {
-                    if (type === 'prefix') {
-                        if (selectedPrefix) selectedPrefix.classList.remove('selected');
-                        selectedPrefix = div; div.classList.add('selected');
-                    } else if (selectedPrefix) {
-                        if (selectedPrefix.dataset.pairId === div.dataset.pairId) {
-                            score += 100; handleSuccess(selectedPrefix, div, item);
-                        } else {
-                            selectedPrefix.classList.remove('selected'); selectedPrefix = null;
-                        }
-                    }
-                };
-                col.appendChild(div);
-            });
-        }
-
-        function handleSuccess(pre, suf, word) {
-            pre.classList.add('correct-anim'); suf.classList.add('correct-anim');
-            const box = document.getElementById('meaning-box'); box.style.opacity = '1';
-            document.getElementById('word-title').textContent = word.p + word.s;
-            document.getElementById('word-meaning').textContent = word.m;
-            document.getElementById('word-example').textContent = "Example: " + word.e;
-            completedInLevel++; selectedPrefix = null;
-            if (completedInLevel === 5) document.getElementById('overlay').classList.remove('hidden');
-            updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('level-display').textContent = currentLevel + "/20";
-            document.getElementById('score-display').textContent = score;
-            document.getElementById('progress-bar').style.width = (completedInLevel / 5 * 100) + '%';
-        }
-
-        function showLevelStory() { document.getElementById('story-content').textContent = levelStories[currentLevel] || "Unlock level to read!"; document.getElementById('story-modal').classList.remove('hidden'); }
-        function closeStoryModal() { document.getElementById('story-modal').classList.add('hidden'); }
-        function startNextLevel() { document.getElementById('overlay').classList.add('hidden'); currentLevel++; loadLevel(currentLevel); }
-
-        window.onload = () => loadLevel(1);
-    </script>
-</body>
+  </body>
 </html>
